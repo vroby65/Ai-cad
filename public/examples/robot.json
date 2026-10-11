@@ -1,0 +1,304 @@
+{
+  "version": 1,
+  "name": "Un piccolo robot",
+  "units": "mm",
+  "objects": [
+    {
+      "id": "body",
+      "type": "box",
+      "name": "Corpo",
+      "dimensions": {
+        "x": 90,
+        "y": 50,
+        "z": 95
+      },
+      "position": [
+        0,
+        0,
+        107.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#62c7a5",
+      "groupId": null
+    },
+    {
+      "id": "head",
+      "type": "box",
+      "name": "Testa",
+      "dimensions": {
+        "x": 80,
+        "y": 60,
+        "z": 55
+      },
+      "position": [
+        0,
+        0,
+        192.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null
+    },
+    {
+      "id": "neck",
+      "type": "cylinder",
+      "name": "Collo",
+      "dimensions": {
+        "radius": 12,
+        "height": 10
+      },
+      "position": [
+        0,
+        0,
+        160
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#c5d1e3",
+      "groupId": null
+    },
+    {
+      "id": "eye-left",
+      "type": "sphere",
+      "name": "Occhio sinistro",
+      "dimensions": {
+        "radius": 8
+      },
+      "position": [
+        -22,
+        -31,
+        196
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#202c3d",
+      "groupId": null
+    },
+    {
+      "id": "eye-right",
+      "type": "sphere",
+      "name": "Occhio destro",
+      "dimensions": {
+        "radius": 8
+      },
+      "position": [
+        22,
+        -31,
+        196
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#202c3d",
+      "groupId": null
+    },
+    {
+      "id": "mouth",
+      "type": "box",
+      "name": "Sorriso",
+      "dimensions": {
+        "x": 24,
+        "y": 3,
+        "z": 4
+      },
+      "position": [
+        0,
+        -31.5,
+        178
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#202c3d",
+      "groupId": null
+    },
+    {
+      "id": "arm-left",
+      "type": "cylinder",
+      "name": "Braccio sinistro",
+      "dimensions": {
+        "radius": 10,
+        "height": 80
+      },
+      "position": [
+        -63,
+        0,
+        110
+      ],
+      "rotation": [
+        0,
+        -15,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null
+    },
+    {
+      "id": "arm-right",
+      "type": "cylinder",
+      "name": "Braccio destro",
+      "dimensions": {
+        "radius": 10,
+        "height": 80
+      },
+      "position": [
+        63,
+        0,
+        110
+      ],
+      "rotation": [
+        0,
+        15,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null
+    },
+    {
+      "id": "leg-left",
+      "type": "cylinder",
+      "name": "Gamba sinistra",
+      "dimensions": {
+        "radius": 12,
+        "height": 40
+      },
+      "position": [
+        -25,
+        0,
+        40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#c5d1e3",
+      "groupId": null
+    },
+    {
+      "id": "leg-right",
+      "type": "cylinder",
+      "name": "Gamba destra",
+      "dimensions": {
+        "radius": 12,
+        "height": 40
+      },
+      "position": [
+        25,
+        0,
+        40
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#c5d1e3",
+      "groupId": null
+    },
+    {
+      "id": "foot-left",
+      "type": "box",
+      "name": "Piede sinistro",
+      "dimensions": {
+        "x": 35,
+        "y": 65,
+        "z": 20
+      },
+      "position": [
+        -25,
+        -12,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null
+    },
+    {
+      "id": "foot-right",
+      "type": "box",
+      "name": "Piede destro",
+      "dimensions": {
+        "x": 35,
+        "y": 65,
+        "z": 20
+      },
+      "position": [
+        25,
+        -12,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null
+    },
+    {
+      "id": "antenna",
+      "type": "cylinder",
+      "name": "Antenna",
+      "dimensions": {
+        "radius": 3,
+        "height": 25
+      },
+      "position": [
+        0,
+        0,
+        232.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#c5d1e3",
+      "groupId": null
+    },
+    {
+      "id": "antenna-tip",
+      "type": "sphere",
+      "name": "Punta antenna",
+      "dimensions": {
+        "radius": 7
+      },
+      "position": [
+        0,
+        0,
+        250
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#f4b860",
+      "groupId": null
+    }
+  ],
+  "groups": []
+}

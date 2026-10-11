@@ -1,0 +1,9 @@
+export const MAX_PROJECT_BYTES=8*1024*1024;
+export const MAX_AI_BYTES=512*1024;
+export const MAX_OBJECTS=200;
+export const MAX_OPERATIONS=100;
+export const MAX_STL_BYTES=10*1024*1024;
+export const MAX_STL_TRIANGLES=20000;
+export const MAX_HOLES=8;
+export const MAX_BOOLEAN_PAIRS=32;
+export const MAX_BOOLEAN_TRIANGLES=20000;

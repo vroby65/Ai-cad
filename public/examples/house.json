@@ -1,0 +1,161 @@
+{
+  "version": 1,
+  "name": "Una casetta",
+  "units": "mm",
+  "objects": [
+    {
+      "id": "walls",
+      "type": "box",
+      "name": "Pareti",
+      "dimensions": {
+        "x": 160,
+        "y": 130,
+        "z": 120
+      },
+      "position": [
+        0,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#e9d9b4",
+      "groupId": null
+    },
+    {
+      "id": "door",
+      "type": "box",
+      "name": "Porta",
+      "dimensions": {
+        "x": 32,
+        "y": 5,
+        "z": 65
+      },
+      "position": [
+        0,
+        -67.5,
+        32.5
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#80583c",
+      "groupId": null
+    },
+    {
+      "id": "window-left",
+      "type": "box",
+      "name": "Finestra sinistra",
+      "dimensions": {
+        "x": 30,
+        "y": 5,
+        "z": 30
+      },
+      "position": [
+        -48,
+        -67.5,
+        78
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#79bfe2",
+      "groupId": null
+    },
+    {
+      "id": "window-right",
+      "type": "box",
+      "name": "Finestra destra",
+      "dimensions": {
+        "x": 30,
+        "y": 5,
+        "z": 30
+      },
+      "position": [
+        48,
+        -67.5,
+        78
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#79bfe2",
+      "groupId": null
+    },
+    {
+      "id": "roof-left",
+      "type": "box",
+      "name": "Falda sinistra del tetto",
+      "dimensions": {
+        "x": 110,
+        "y": 155,
+        "z": 8
+      },
+      "position": [
+        -45,
+        0,
+        151
+      ],
+      "rotation": [
+        0,
+        -35,
+        0
+      ],
+      "color": "#c36354",
+      "groupId": null
+    },
+    {
+      "id": "roof-right",
+      "type": "box",
+      "name": "Falda destra del tetto",
+      "dimensions": {
+        "x": 110,
+        "y": 155,
+        "z": 8
+      },
+      "position": [
+        45,
+        0,
+        151
+      ],
+      "rotation": [
+        0,
+        35,
+        0
+      ],
+      "color": "#c36354",
+      "groupId": null
+    },
+    {
+      "id": "chimney",
+      "type": "cylinder",
+      "name": "Comignolo",
+      "dimensions": {
+        "radius": 12,
+        "height": 60
+      },
+      "position": [
+        42,
+        30,
+        179
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#e2c6a1",
+      "groupId": null
+    }
+  ],
+  "groups": []
+}

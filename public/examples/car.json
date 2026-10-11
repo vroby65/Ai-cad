@@ -1,0 +1,251 @@
+{
+  "version": 1,
+  "name": "Un’automobile",
+  "units": "mm",
+  "objects": [
+    {
+      "id": "chassis",
+      "type": "box",
+      "name": "Carrozzeria",
+      "dimensions": {
+        "x": 210,
+        "y": 105,
+        "z": 45
+      },
+      "position": [
+        0,
+        0,
+        50
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#edaa62",
+      "groupId": null
+    },
+    {
+      "id": "cabin",
+      "type": "box",
+      "name": "Abitacolo",
+      "dimensions": {
+        "x": 100,
+        "y": 90,
+        "z": 45
+      },
+      "position": [
+        -10,
+        0,
+        95
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#edaa62",
+      "groupId": null
+    },
+    {
+      "id": "window-front",
+      "type": "box",
+      "name": "Parabrezza",
+      "dimensions": {
+        "x": 4,
+        "y": 74,
+        "z": 30
+      },
+      "position": [
+        42,
+        0,
+        99
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#9bc9e8",
+      "groupId": null
+    },
+    {
+      "id": "window-side-a",
+      "type": "box",
+      "name": "Finestrino sinistro",
+      "dimensions": {
+        "x": 72,
+        "y": 4,
+        "z": 28
+      },
+      "position": [
+        -10,
+        -47,
+        99
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#9bc9e8",
+      "groupId": null
+    },
+    {
+      "id": "window-side-b",
+      "type": "box",
+      "name": "Finestrino destro",
+      "dimensions": {
+        "x": 72,
+        "y": 4,
+        "z": 28
+      },
+      "position": [
+        -10,
+        47,
+        99
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#9bc9e8",
+      "groupId": null
+    },
+    {
+      "id": "headlight-a",
+      "type": "box",
+      "name": "Faro sinistro",
+      "dimensions": {
+        "x": 4,
+        "y": 22,
+        "z": 14
+      },
+      "position": [
+        107,
+        -30,
+        54
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#f3edce",
+      "groupId": null
+    },
+    {
+      "id": "headlight-b",
+      "type": "box",
+      "name": "Faro destro",
+      "dimensions": {
+        "x": 4,
+        "y": 22,
+        "z": 14
+      },
+      "position": [
+        107,
+        30,
+        54
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#f3edce",
+      "groupId": null
+    },
+    {
+      "id": "wheel-1",
+      "type": "cylinder",
+      "name": "Ruota posteriore 1",
+      "dimensions": {
+        "radius": 25,
+        "height": 20
+      },
+      "position": [
+        -70,
+        -63,
+        25
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ],
+      "color": "#252d3e",
+      "groupId": "wheels"
+    },
+    {
+      "id": "wheel-2",
+      "type": "cylinder",
+      "name": "Ruota posteriore 2",
+      "dimensions": {
+        "radius": 25,
+        "height": 20
+      },
+      "position": [
+        -70,
+        63,
+        25
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ],
+      "color": "#252d3e",
+      "groupId": "wheels"
+    },
+    {
+      "id": "wheel-3",
+      "type": "cylinder",
+      "name": "Ruota anteriore 1",
+      "dimensions": {
+        "radius": 25,
+        "height": 20
+      },
+      "position": [
+        70,
+        -63,
+        25
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ],
+      "color": "#252d3e",
+      "groupId": "wheels"
+    },
+    {
+      "id": "wheel-4",
+      "type": "cylinder",
+      "name": "Ruota anteriore 2",
+      "dimensions": {
+        "radius": 25,
+        "height": 20
+      },
+      "position": [
+        70,
+        63,
+        25
+      ],
+      "rotation": [
+        90,
+        0,
+        0
+      ],
+      "color": "#252d3e",
+      "groupId": "wheels"
+    }
+  ],
+  "groups": [
+    {
+      "id": "wheels",
+      "name": "Quattro ruote"
+    }
+  ]
+}
