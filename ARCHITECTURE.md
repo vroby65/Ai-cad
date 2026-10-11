@@ -11,7 +11,8 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/project.js, js/limits.js | Strict schemas, bounds and atomic operations |
 | js/api.js | Official DeepSeek client, system contract and response parsing |
 | js/account.js | Remember/delete key, fetch and validate balance |
-| js/chat.js, js/explain.js | Safe text bubbles, raw JSON, applied operations |
+| js/chat.js, js/explain.js | Safe text bubbles, session conversation, applied operations |
+| js/properties.js | Selected-object form, typed changes and inline errors |
 | js/layout.js | Chat separator, pointer capture, keyboard and adaptive bounds |
 | js/renderer.js | Three.js scene, Z-up camera, selection and stable-ID meshes |
 | js/geometry.js | Primitive and imported mesh base geometries |
@@ -27,7 +28,7 @@ The first paths are relative to public/.
 
 ## Command flow
 
-The browser sends the command, selectedId and compact project to the official
+The browser sends recent conversation pairs, the command, selectedId and compact project to the official
 HTTPS API using the fixed deepseek-flash model and JSON response mode.
 Mesh vertices are omitted and triangleCount added. The key occurs only in the
 Authorization header, never in the prompt, snapshots or exported files.
@@ -44,11 +45,29 @@ No eval, generated code, PHP endpoint or database is involved.
 
 The chat retains forty exchanges in the DOM and resets when a project opens.
 Raw JSON details open manually, or automatically for errors. There is no CoderDojo
-selector. The transcript is not sent to DeepSeek.
+selector. Completed turns retain the user prompt and a compact assistant summary
+with message, applied and affected objectIds, including clarification-only replies.
+Failed turns record applied:false with a safe error, never rejected raw JSON or
+unexecuted operations. In-flight turns are excluded. The API accepts only alternating
+user/assistant pairs (at most forty), trimming older whole pairs to a 128 KiB UTF-8
+budget. Conversation summaries omit operations/vertices; they are historical context,
+not commands. Current compact state and selection are sent last and are authoritative
+after manual edits, undo/redo or imports. Chat memory is not saved to files/storage.
 
 The client has a 60-second timeout and 512 KiB streamed-response limit, with no
 redirects or automatic retries. Provider bodies are not exposed as error details.
 The API must permit CORS; static hosting cannot bypass a provider restriction.
+
+## Selected-object editing
+
+PropertyEditor creates labeled fields for name/color, center XYZ, Euler XYZ and the
+dimensions of the selected type. Planar mesh axes are disabled. The form reads
+finite numbers and emits one update operation containing only changed fields;
+unchanged submissions create no snapshot. IDs/type/groups/vertices are not editable.
+app.js uses applyOperations and the same prepare/commit path as AI commands, so
+validation and geometry failures remain atomic and updates are undoable. Inline
+errors preserve the entered values. Selection, undo and imports rebuild the form
+from current state; the fieldset is disabled while asynchronous work is in progress.
 
 ## State, coordinates and meshes
 

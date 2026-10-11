@@ -35,8 +35,26 @@ test('Sessione chat limitata a 40 scambi interi e azzerata aprendo un progetto',
   const {chat,container}=setup();
   for(let i=0;i<41;i++) {const turn=chat.start('Comando '+i);chat.complete(turn,{operations:[]},'Nessuna operazione');}
   assert.equal(container.children.length,40); assert.equal(chat.turns.length,40);
+  assert.equal(chat.messages().length,80); assert.equal(chat.messages()[0].content,'Comando 1');
   assert.equal(container.children[0].textContent.includes('Comando 0'),false);
   const last=chat.turns.at(-1); assert.equal(last.reply.textContent,'Nessuna operazione');
   assert.equal(last.details.open,false); last.details.open=true; assert.equal(last.details.open,true);
   chat.reset(); assert.equal(chat.turns.length,0); assert.equal(container.children.length,1);
+});
+
+test('La memoria conserva chiarimenti e ID applicati, esclude richieste in corso e segnala gli errori',()=>{
+  const {chat}=setup();
+  const first=chat.start('Crea un cubo');assert.deepEqual(chat.messages(),[]);
+  chat.complete(first,reply,'1 operazione applicata');
+  const question=chat.start('Aggiungi un’antenna');
+  chat.complete(question,{message:'La preferisci conica o cilindrica?',operations:[]},'Nessuna operazione');
+  const failed=chat.start('Cilindrica');chat.output(failed,'{"operations":[{"op":"execute","code":"evil"}]}');chat.fail(failed,'Risposta rifiutata');
+  const messages=chat.messages();assert.equal(messages.length,6);
+  assert.equal(messages[0].content,'Crea un cubo');
+  assert.deepEqual(JSON.parse(messages[1].content),{message:reply.message,applied:true,objectIds:['cube-1']});
+  assert.equal(JSON.parse(messages[3].content).message,'La preferisci conica o cilindrica?');
+  assert.deepEqual(JSON.parse(messages[5].content),{message:'Risposta rifiutata',applied:false,objectIds:[]});
+  assert.equal(JSON.stringify(messages).includes('evil'),false);
+  messages[0].content='changed';assert.equal(chat.messages()[0].content,'Crea un cubo');
+  chat.reset();assert.deepEqual(chat.messages(),[]);
 });

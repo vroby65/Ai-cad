@@ -8,6 +8,7 @@ import { importSTL, MAX_STL_BYTES } from './import.js';
 import { decodeProject, encodeProject, download, filename, MAX_FILE_BYTES } from './files.js';
 import { ChatView } from './chat.js';
 import { setupChatResize } from './layout.js';
+import { PropertyEditor } from './properties.js';
 
 const $=id=>document.getElementById(id);
 $('deepseek-key').value=readKey();
@@ -15,9 +16,14 @@ const history=new History(emptyProject());
 const chat=new ChatView($('chat-messages'));
 let selectedId=null, busy=false, view;
 let balanceRequest=null,balanceVersion=0,balanceTimer;
+const propertyEditor=new PropertyEditor($('property-form'),$('property-fields'),$('property-error'),operation=>{
+  commit(applyOperations(history.current,{operations:[operation]}));
+  message('Valori dell’oggetto aggiornati.');
+});
 function message(text,error=false) { $('status').textContent=text; $('status').className=error ? 'error' : busy ? 'busy' : ''; }
 function setBusy(value) {
   busy=value;
+  propertyEditor.setBusy(value);
   for(const id of ['run','open','save','export','import-stl','deepseek-key','clear-key','object-hole']) $(id).disabled=value;
   document.querySelectorAll('[data-example]').forEach(b=>b.disabled=value);
   $('undo').disabled=value||!history.canUndo; $('redo').disabled=value||!history.canRedo;
@@ -45,10 +51,11 @@ function renderObjects() {
   $('object-hole').checked=object?.hole===true;
   $('property-list').replaceChildren();
   if(object) {
-    for(const [label,value] of [['ID',object.id],['Centro',object.position.join(', ')+' mm'],['Angoli',object.rotation.join(', ')+' °'],['Misure',Object.entries(object.dimensions).map(([k,v])=>`${k}: ${v}`).join(' · ')+' mm']]) {
+    for(const [label,value] of [['ID',object.id],['Tipo',object.type]]) {
       $('property-list').append(node('dt',label),node('dd',value));
     }
   }
+  propertyEditor.render(object,busy);
 }
 function render(prepared) {
   const state=history.current;
@@ -66,11 +73,13 @@ async function execute() {
   if(busy) return;
   const prompt=$('prompt').value.trim(); if(!prompt) { $('prompt').focus(); return; }
   const before=history.current;
+  const messages=chat.messages();
   const turn=chat.start(prompt);
   setBusy(true); message('DeepSeek sta interpretando il comando…');
   try {
     const modelJson=await interpretDeepSeek(prompt,before,selectedId,{
       key:$('deepseek-key').value,
+      messages,
       onOutput:content=>chat.output(turn,content)
     });
     const updated=applyOperations(before,{operations:modelJson.operations});

@@ -234,6 +234,55 @@ h3 {
   margin:0;
   overflow-wrap:anywhere
 }
+.properties fieldset {
+  border:0;
+  padding:0;
+  margin:0 0 12px;
+  min-width:0
+}
+.properties legend,.properties label>span {
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:5px
+}
+#property-fields>label,.properties fieldset>label {
+  display:block;
+  margin-bottom:10px
+}
+.properties input:not([type=checkbox]) {
+  width:100%;
+  min-width:0;
+  padding:6px;
+  border:1px solid var(--line);
+  border-radius:5px;
+  background:var(--bg);
+  color:var(--text);
+  font-size:12px
+}
+.properties input[type=color] {
+  height:32px;
+  padding:3px
+}
+.property-vector {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px
+}
+.properties input:disabled {
+  opacity:.45
+}
+.property-apply {
+  width:100%;
+  background:#263e43;
+  border-color:#416b64
+}
+#property-error {
+  display:block;
+  color:#ffb4a9;
+  font-size:11px;
+  line-height:1.5
+}
 .examples {
   margin-top:auto;
   padding-top:22px;

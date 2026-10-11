@@ -25,20 +25,28 @@ export class ChatView {
     const raw=this.node('pre',''); details.append(this.node('summary','Risposta completa · JSON'),raw);
     bubble.append(this.node('span','DeepSeek · Flash','chat-author'),reply,summary,operations,details);
     article.append(user,bubble); this.container.append(article);
-    const turn={article,bubble,reply,summary,operations,details,raw}; this.turns.push(turn);
+    const turn={article,bubble,reply,summary,operations,details,raw,prompt,context:null}; this.turns.push(turn);
     if(this.turns.length>40) this.turns.shift().article.remove();
     this.scroll(); return turn;
   }
   output(turn,content) { turn.raw.textContent=content; turn.details.hidden=false; this.scroll(); }
   complete(turn,response,summary) {
+    const objectIds=[...new Set(response.operations.flatMap(op=>[op.object?.id,op.id,op.newId,...(op.ids||[]),...(op.toolIds||[])].filter(Boolean)))];
+    turn.context=JSON.stringify({message:response.message||summary,applied:true,objectIds});
     turn.reply.textContent=response.message||summary;
     turn.summary.textContent=response.message ? summary : '';
     turn.operations.replaceChildren(...response.operations.map(op=>this.node('li',explain(op))));
     turn.bubble.setAttribute('aria-busy','false'); this.scroll();
   }
   fail(turn,error) {
+    turn.context=JSON.stringify({message:error,applied:false,objectIds:[]});
     turn.reply.textContent=error; turn.summary.textContent='Nessuna modifica applicata.';
     turn.bubble.className='chat-message assistant error'; turn.bubble.setAttribute('aria-busy','false');
     turn.operations.replaceChildren(); turn.details.open=true; this.scroll();
+  }
+  messages() {
+    return this.turns.filter(turn=>turn.context!==null).flatMap(turn=>[
+      {role:'user',content:turn.prompt},{role:'assistant',content:turn.context}
+    ]);
   }
 }

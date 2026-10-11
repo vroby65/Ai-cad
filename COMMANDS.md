@@ -158,13 +158,25 @@ The archived PHP backend does not support mesh/hole/subtract extensions.
 
 Official POST https://api.deepseek.com/chat/completions, Authorization Bearer and
 Content-Type application/json. Model is always deepseek-flash. Payload fields:
-model, messages (system/user), response_format:{"type":"json_object"}, max_tokens:8192,
+model, messages (system, prior user/assistant pairs, current user), response_format:{"type":"json_object"}, max_tokens:8192,
 stream:false. No PHP endpoint, application proxy or selectable model.
 
-The user message is serialized JSON containing command, selectedId and project.
+The final user message is serialized JSON containing command, selectedId and project.
 Command is 1–2000 characters; selection is null or an existing object ID.
 Mesh context omits vertices and adds triangleCount. This compact context is not
-a saveable project. No chat transcript or mesh vertices are sent.
+a saveable project. Mesh vertices are never sent.
+
+Previous user messages contain their prompts; assistant context is a JSON summary
+{message,applied,objectIds}. It includes explanations/clarifications and stable IDs,
+not executable operations or rejected raw output. applied:false means the request
+failed with no scene changes. At most 40 whole pairs within 128 KiB UTF-8 are sent,
+keeping the most recent pairs. Current project/selection override historical context.
+Conversation is session-only and resets when a JSON file or example opens.
+See [DeepSeek's multi-round guide](https://api-docs.deepseek.com/guides/multi_round_chat).
+
+The property panel uses the same update schema, with absolute values for name,
+color, position, rotation and dimensions. Applica creates a single atomic, undoable
+batch locally, without calling DeepSeek. It cannot change IDs/type/groups/vertices.
 
 A complete choices[0].finish_reason:"stop" and string message.content are required.
 The raw content reaches the chat before validation; invalid/truncated content is

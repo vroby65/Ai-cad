@@ -139,8 +139,24 @@ A mesh does not retain a parametric primitive history.
 
 The chat shows 40 exchanges with the command, explanation, applied operations and
 expandable **Risposta completa · JSON**. Rejected output remains readable but is not
-shown as applied. There is no CoderDojo switch. DeepSeek receives the current command,
-selection and compact state; vertices and the chat transcript are omitted.
+shown as applied. There is no CoderDojo switch. DeepSeek receives recent conversation
+pairs, including your prompts, assistant explanations, affected IDs and whether a
+request succeeded. This allows replies such as “yes”, “conical” or “like before”.
+Conversation context is limited to 40 exchanges and 128 KiB, retaining recent whole
+pairs. It stays in memory and resets when opening a JSON file or starter project.
+The current command, selection and compact state are sent last and take priority
+after manual edits, undo/redo or STL import. Mesh vertices and rejected raw output
+are omitted. The key is never included in this context.
+
+Select a part in the scene or object list, open **Oggetti** if needed, and edit its
+name, color, center XYZ, Euler rotation XYZ or dimensions in the sidebar. Press
+**Applica** (or Enter in a field) to commit all changed values together, without an
+API call. Values are in mm or degrees; dimensions match the selected primitive.
+Imported/cut meshes can also be resized; originally planar axes remain locked at
+zero. Invalid edits leave the scene unchanged and show an error in the panel.
+Updates preserve the ID, refresh the geometry and support **Annulla / Ripristina**.
+Moving/resizing an editable hole recalculates its cut. Editing is disabled while
+an AI request or file load is in progress.
 
 Drag the separator above the chat with mouse or touch to adjust height. Focus it
 with Tab and use Up/Down, Home or End. Limits adapt to the window; height is not
@@ -189,6 +205,9 @@ Manual Firefox checks:
 6. Drag the chat separator, use its keyboard controls and resize the window.
 7. Reload and check remembered key/balance; clear during a pending request.
 8. Try malformed files, a narrow screen and an external STL slicer.
+9. Answer a clarification with a short reply; check earlier preferences and IDs.
+10. Edit primitive/mesh/hole values, undo/redo, and confirm the next AI command
+    uses the manually updated state.
 
 Screenshots will be added to docs/screenshots/ after a real graphical check.
 No simulated screenshots are included. Browser/WebGL testing is not yet verified.

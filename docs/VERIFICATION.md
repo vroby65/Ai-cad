@@ -5,7 +5,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**71 tests passed** with npm test. The suite covers:
+**83 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -33,6 +33,16 @@ no PHP. Tests do not use real keys or paid API requests.
   errors, timeout and bounded streamed responses.
 - Simulated DOM chat: safe text, bubbles, detailed operations, raw JSON, errors,
   forty-turn cap and reset.
+- Conversation memory: clarification replies, stable affected IDs, pending-turn
+  exclusion, failures marked unapplied, whole recent pairs within a 128 KiB UTF-8
+  budget, strict roles and unchanged caller data. Rejected raw JSON is not sent.
+- Selected-object forms: all primitive dimensions, planar mesh axes, names/colors,
+  center/rotation/dimensions, invalid values, atomic edits, unchanged submissions,
+  busy/selection handling and undo/redo. Real imported STL is resized/exported;
+  changing editable-hole dimensions/position changes the measured removed volume.
+- A clarification followed by a manual property edit and a short chat reply sends
+  the remembered question, current selection and updated dimensions/position;
+  mocked AI operations apply to the latest state.
 - Simulated account storage/fetch: restore/remove only the app key, blocked storage,
   decimal balance strings, multiple currencies, stale-request cancellation and errors.
 - Simulated resize events: pointer capture, foreign pointers, release/cancel, touch,
@@ -73,11 +83,11 @@ documentation and metadata, the MIT license and a GitHub noreply commit identity
 The [first GitHub Actions run](https://github.com/vroby65/deepcad/actions/runs/38132815691)
 passed all 71 tests, JavaScript syntax checks and the Pages deployment.
 
-The live app at [GitHub Pages](https://vroby65.github.io/deepcad/) returns HTTP 200.
-Its landing page and all 28 public assets match the local files by SHA-256, and
-the deployed project license matches LICENSE. Six private/source paths, including
+At initial publication, the live app at [GitHub Pages](https://vroby65.github.io/deepcad/)
+returned HTTP 200. Its landing page and all 28 public assets matched the local files
+by SHA-256, and the deployed project license matched LICENSE. Six private/source paths, including
 .env, legacy/api.php, legacy/README.md, AGENTS.md, package.json and this report,
-return HTTP 404 on Pages. The deployment contains the public directory and license;
+returned HTTP 404 on Pages. The deployment contains the public directory and license;
 archived PHP and user project files are excluded.
 
 ## Remaining verification

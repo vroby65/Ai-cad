@@ -8,6 +8,7 @@ archive outside the public deployment.
 
 - UI/integration: public/index.html, public/style.css, public/js/app.js.
 - Chat: public/js/chat.js; explanations: explain.js; resizer: layout.js.
+- Selected-object form: public/js/properties.js, integrated through app.js.
 - Schemas/operations: project.js; limits: limits.js; AI: api.js.
 - Key storage/balance: account.js and app.js.
 - View: renderer.js; base geometry: geometry.js; cuts: boolean.js.
@@ -44,7 +45,20 @@ viewport space and exposes ARIA values. Its height is not persisted.
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
 Batches apply to a copy and remain atomic. Groups are flat. Mesh vertices come
 only from valid file imports or locally calculated subtraction, never from the AI.
-DeepSeek sees compact mesh data with triangleCount, not vertices or chat history.
+DeepSeek sees compact mesh data with triangleCount, not vertices. Send bounded
+session conversation before the final command/state: at most forty alternating
+user/assistant pairs within 128 KiB. Assistant summaries contain message, applied
+and objectIds. Keep clarification-only replies; failed turns have applied:false,
+without rejected raw output or unexecuted operations. Pending turns are excluded.
+Current state/selection override historical references after manual edits/undo.
+Never persist chat to localStorage or project files; reset when opening JSON/examples.
+
+Selected-object fields edit name/color, center XYZ, Euler XYZ and type-specific
+dimensions, including imported/cut meshes and editable holes. Keep IDs/type/groups/
+vertices out of the form and lock originally planar mesh axes. Applica emits one
+update via applyOperations and prepare/commit, preserving IDs and undo/redo.
+Unchanged values do not add history. Reject invalid edits atomically, show inline
+errors and retain the draft; disable editing while asynchronous work is in progress.
 
 For drilling, use subtract with explicit full ids and primitive-hole toolIds.
 Store real cut vertices, preserving ID/name/color/group/orientation. Recenter
