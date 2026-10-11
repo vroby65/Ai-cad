@@ -66,6 +66,20 @@ native file dialogs and downloads have not been clicked by an automated browser.
 - Archived PHP checks were previously run after moving it: 66 assertions and five
   HTTP tests passed. They do not describe the active application's runtime.
 
+## GitHub publication and Pages
+
+The public [repository](https://github.com/vroby65/deepcad) uses main, English
+documentation and metadata, the MIT license and a GitHub noreply commit identity.
+The [first GitHub Actions run](https://github.com/vroby65/deepcad/actions/runs/38132815691)
+passed all 71 tests, JavaScript syntax checks and the Pages deployment.
+
+The live app at [GitHub Pages](https://vroby65.github.io/deepcad/) returns HTTP 200.
+Its landing page and all 28 public assets match the local files by SHA-256, and
+the deployed project license matches LICENSE. Six private/source paths, including
+.env, legacy/api.php, legacy/README.md, AGENTS.md, package.json and this report,
+return HTTP 404 on Pages. The deployment contains the public directory and license;
+archived PHP and user project files are excluded.
+
 ## Remaining verification
 
 The integrated browser returned “No browser is available”; connected browser
@@ -76,6 +90,3 @@ There are no screenshots or claims of verified graphical compatibility.
 No authenticated DeepSeek request or real balance read was performed. Mock fetches
 and CORS checks cannot replace this. No STL was printed or validated in an external
 slicer; volume/raycast checks do not guarantee manifold topology or printability.
-
-GitHub Actions and the public Pages URL must be checked after an authenticated
-publication. Local configuration alone does not establish a successful deployment.
