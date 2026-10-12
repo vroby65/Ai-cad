@@ -37,7 +37,7 @@ The response is untrusted. parseEnvelope requires a complete stop response, JSON
 with exact message/operations fields, a bounded explanation and allowed operations.
 applyOperations works on a copy and validates schemas, references and resource bounds
 after each operation. Editable-hole pair limits are checked on the completed batch,
-so temporary tools can be consumed by subtract or isolated by grouping before preview.
+so temporary tools can be linked/consumed by subtract or isolated by grouping before preview.
 Each subtract independently checks its actual target/tool pair count before CSG.
 Errors reject the whole batch. Only a prepared, valid result is committed.
 
@@ -103,19 +103,30 @@ pinned MIT THREE-CSGMesh BSP core. External bounding boxes and degenerate input
 triangles are skipped. Results exceeding 20000 triangles or containing nonfinite
 values are rejected.
 
-The result is stored as a centered mesh with the same ID, name, color, group and
-orientation. Its world center is adjusted so remaining material does not move.
-Tools are consumed; fully consumed solids are removed; empty groups are pruned.
-Groups do not constrain explicit subtraction. All targets must lose material;
+By default, the source solids and tools stay in project.objects. Subtract records
+targetIds on tools, containing expanded full-object IDs and merging existing explicit
+links. Groups do not constrain these links. The source geometry is never baked, so
+tool edits can restore material at the old position and cut the new position.
+View/export use evaluatedGeometry to derive actual CSG surfaces from originals.
+Only bake:true replaces targets with centered meshes, adjusts their world centers,
+consumes tools and removes fully consumed solids. It must include all explicitly
+linked targets of those tools. All initial targets must lose material;
 volume reduction must exceed max(1e-9 mm³, original volume × 1e-8).
 An error leaves the source state and tools unchanged. JSON/STL persist the result.
 
 Editable hole tools use the optional primitive-only hole boolean. They cut all
-full objects with identical groupId, including **closed meshes imported from JSON
-or STL**. Null affects only ungrouped objects; other groups are isolated.
+full objects in optional targetIds, including **closed meshes imported from JSON
+or STL**. Without targetIds they use identical groupId for old/manual tools.
+Null then affects only ungrouped objects; other groups are isolated.
 Tools remain invisible but selectable in the object panel. Moving, rotating,
 resizing, toggling or deleting a tool recalculates/restores the material.
 Original geometry and tools are saved, not preview CSG triangles.
+Target lists are validated as unique existing full-object IDs. Create/update from
+the AI cannot supply targetIds; subtract maintains them locally. Deleting a target
+prunes its links but preserves an explicit empty list, preventing fallback cuts on
+unrelated grouped objects. Toggling a tool to full retains its inactive links.
+The pair limit counts explicit links or applicable legacy group members.
+Old baked meshes/STL contain no reconstructible editing history for their old cuts.
 
 For car wheel arches, every overlapping full panel must be cut. A fender opening
 can be blocked by an untouched body in a different group. Explicit subtraction

@@ -36,9 +36,13 @@ function meshVertices(o) {
   if(min.filter((n,i)=>max[i]>n).length<2) throw new Error('La mesh deve avere una superficie.');
 }
 function object(value) {
-  fields(value,['id','type','name','dimensions','position','rotation','color','groupId'],value?.type==='mesh'?['vertices']:['hole']);
+  fields(value,['id','type','name','dimensions','position','rotation','color','groupId'],value?.type==='mesh'?['vertices']:['hole','targetIds']);
   if(Object.hasOwn(value,'hole') && typeof value.hole!=='boolean') throw new Error('hole deve essere un booleano.');
   id(value.id); text(value.name,80);
+  if(Object.hasOwn(value,'targetIds')) {
+    if(!Array.isArray(value.targetIds) || value.targetIds.length>MAX_OBJECTS || new Set(value.targetIds).size!==value.targetIds.length) throw new Error('Bersagli del foro non validi.');
+    for(const target of value.targetIds) { id(target); if(target===value.id) throw new Error('Un foro non può scavare sé stesso.'); }
+  }
   if(typeof value.type!=='string') throw new Error('Tipo non valido.');
   dimensions(value.dimensions,value.type); vector(value.position); vector(value.rotation,36000);
   if(typeof value.color!=='string' || value.color.length!==7 || !/^#[0-9a-fA-F]{6}$/.test(value.color)) throw new Error('Colore deve essere #RRGGBB.');
@@ -60,6 +64,9 @@ function validateState(state) {
     if(o.groupId!==null && !groups.has(o.groupId)) throw new Error('Gruppo inesistente.');
   }
   for(const group of groups) if(!state.objects.some(o=>o.groupId===group)) throw new Error('Gruppo vuoto.');
+  for(const o of state.objects) for(const target of o.targetIds||[]) {
+    if(!state.objects.some(full=>full.id===target && !full.hole)) throw new Error('Il bersaglio del foro deve essere un solido pieno esistente.');
+  }
   const holes=state.objects.filter(o=>o.hole===true);
   if(holes.length>MAX_HOLES) throw new Error('Massimo 8 forme foro per progetto.');
   if(new TextEncoder().encode(JSON.stringify(state)).byteLength>MAX_PROJECT_BYTES) throw new Error('Progetto troppo grande (massimo 8 MiB).');
@@ -68,7 +75,7 @@ function validateState(state) {
 export function validateProject(state) {
   validateState(state);
   const holes=state.objects.filter(o=>o.hole===true);
-  const pairs=holes.reduce((count,hole)=>count+state.objects.filter(o=>o.hole!==true && o.groupId===hole.groupId).length,0);
+  const pairs=holes.reduce((count,hole)=>count+(hole.targetIds ? hole.targetIds.length : state.objects.filter(o=>o.hole!==true && o.groupId===hole.groupId).length),0);
   if(pairs>MAX_BOOLEAN_PAIRS) throw new Error('Troppe sottrazioni: massimo 32 coppie pieno/foro. Usa gruppi per isolare i pezzi.');
   return state;
 }
@@ -94,7 +101,11 @@ function targets(state,ids) {
   }
   return [...result.values()];
 }
-function prune(state) { state.groups=state.groups.filter(g=>state.objects.some(o=>o.groupId===g.id)); }
+function prune(state) {
+  state.groups=state.groups.filter(g=>state.objects.some(o=>o.groupId===g.id));
+  const fullIds=new Set(state.objects.filter(o=>!o.hole).map(o=>o.id));
+  for(const object of state.objects) if(object.targetIds) object.targetIds=object.targetIds.filter(id=>fullIds.has(id));
+}
 
 // Apply to an independent copy: one invalid operation rejects the whole command.
 export function applyOperations(state,batch) {
@@ -107,6 +118,7 @@ export function applyOperations(state,batch) {
       case 'create':
         fields(op,['op','object']); object(op.object); unused(next,op.object.id);
         if(op.object.type==='mesh') throw new Error('Le mesh si creano con Importa STL, non tramite AI.');
+        if(Object.hasOwn(op.object,'targetIds')) throw new Error('I bersagli dei fori si collegano con subtract, non con create.');
         next.objects.push(structuredClone(op.object)); break;
       case 'update':
         fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole']);
@@ -129,11 +141,17 @@ export function applyOperations(state,batch) {
         next.objects=next.objects.filter(o=>!remove.has(o.id)); prune(next); break;
       }
       case 'subtract': {
-        fields(op,['op','ids','toolIds']);
+        fields(op,['op','ids','toolIds'],['bake']);
+        if(Object.hasOwn(op,'bake') && typeof op.bake!=='boolean') throw new Error('bake deve essere un booleano.');
         const solids=targets(next,op.ids),tools=targets(next,op.toolIds);
         if(solids.some(o=>o.hole) || tools.some(o=>o.hole!==true || o.type==='mesh')) throw new Error('Sottrazione: indica solidi pieni come bersagli e forme foro primitive come utensili.');
         if(tools.length>MAX_HOLES || solids.length*tools.length>MAX_BOOLEAN_PAIRS) throw new Error('Sottrazione: massimo 8 forme foro e 32 coppie pieno/foro.');
         const replacements=new Map(solids.map(o=>[o.id,carveObject(o,tools)]));
+        if(op.bake!==true) {
+          for(const tool of tools) tool.targetIds=[...new Set([...(tool.targetIds||[]),...solids.map(o=>o.id)])];
+          break;
+        }
+        if(tools.some(tool=>tool.targetIds?.some(id=>!replacements.has(id)))) throw new Error('Per finalizzare lo scavo includi tutti i bersagli delle forme foro.');
         const consumed=new Set(tools.map(o=>o.id));
         next.objects=next.objects.filter(o=>!consumed.has(o.id)).map(o=>replacements.has(o.id) ? replacements.get(o.id) : o).filter(Boolean);
         prune(next); break;
@@ -151,6 +169,6 @@ export function applyOperations(state,batch) {
     }
     validateState(next);
   }
-  // Temporary tools may be consumed or grouped before this state is rendered.
+  // Temporary tools may be linked, consumed or grouped before rendering.
   return validateProject(next);
 }

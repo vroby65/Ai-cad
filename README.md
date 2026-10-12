@@ -99,10 +99,14 @@ Primitive tools marked `hole:true` are invisible and excluded from STL. Editable
 tools remain in the object list.
 
 For drilling, DeepSeek creates tools and uses **subtract**. This cuts explicitly
-named solids, saves the resulting mesh vertices and consumes the tools. Solids
-keep their IDs, names, colors, groups and orientations. Cuts persist in JSON/STL
-without hidden helpers. **Annulla** restores the previous state. A fully consumed
-solid is removed; an operation removing no material is rejected.
+named solids while preserving their original shapes and the editable tools.
+Solids keep their IDs, types, names, colors, groups and orientations. Select a
+**FORO** in **Oggetti**, change its center, rotation or dimensions, then press
+**Applica**: the old opening fills back in and material is removed at the new
+position. You can also ask DeepSeek to move or resize that same named hole.
+JSON preserves this editing information; STL contains the resulting cut surface.
+**Annulla / Ripristina** include hole edits. An initial operation removing no
+material is rejected. A completely removed solid can return when its tool moves.
 
 Subtract supports primitives and closed meshes imported from **JSON or STL**.
 Targets and tools can be in different groups. Objects outside the target list
@@ -110,16 +114,25 @@ remain intact. For wheel arches, cut all overlapping body panels, including the
 body behind a fender, and exclude the wheels. Cutting only a fender can leave the
 body visible behind the opening.
 
-For **adjustable holes**, ask to keep editable tools or enable **Forma foro** on
-a primitive in the sidebar. Tools cut full objects with the **same group**,
-including closed imported meshes. groupId:null affects only ungrouped objects.
-Group the body and tools to isolate a part; keep wheels elsewhere.
+Adjustable holes are the default. Subtract links each tool to explicit target IDs,
+so it keeps cutting only those objects even if groups change; wheels and unrelated
+parts remain intact. Old/manual tools without target IDs cut full objects with the
+**same group**, including closed imported meshes. groupId:null affects only
+ungrouped objects. Group these tools and solids to isolate a part.
 Moving, rotating or resizing a tool updates the real cut. Disabling or deleting
 it restores material. JSON preserves original shapes and tools for recalculation.
+Tools have their own world coordinates: group the solid and its tools when moving
+the whole assembly together. A single-object duplicate copies only that object;
+linked tools remain separate objects.
+
+Only an explicitly requested finalization uses `bake:true`: it stores a cut mesh
+and consumes tools. Old projects already saved as such meshes, and cut STL imports,
+do not contain the original tool or missing material. Those old openings cannot be
+moved independently: use undo if available or reopen the project before that cut.
 
 Limits: **8 tools**, **32 solid/tool pairs**, **20000 triangles per cut result**.
 For explicit subtract, pairs count only its specified targets and tools. Temporary
-tools created and consumed in the same atomic command do not count against unrelated
+tools created and linked or consumed in the same atomic command do not count against unrelated
 scene objects. The editable-hole pair limit applies to the completed project.
 STL must represent a closed solid, not a plane. Topology is not exhaustively
 checked. BSP subtraction uses triangulated surfaces and does not guarantee

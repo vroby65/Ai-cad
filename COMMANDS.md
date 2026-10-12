@@ -31,7 +31,10 @@ does not modify the model. public/js/project.js is the validation authority.
 ~~~
 
 Shown fields are required. Primitive objects may also have boolean hole, default
-false. Meshes have required vertices instead; hole is not allowed on a mesh.
+false, and engine-managed targetIds. Meshes have required vertices instead;
+hole/targetIds are not allowed on a mesh. TargetIds is a list of 0–200 distinct
+existing full-object IDs, not groups. It is stored by subtract and cannot be supplied
+in AI create/update. An empty list means no targets, with no group fallback.
 Objects and groups are arrays; every group is {id,name} with at least one member.
 
 Object/group IDs are unique across the project: 1–64 characters, first ASCII
@@ -69,7 +72,7 @@ The object in create must follow the primitive schema.
 {op:"rotate", ids, delta:[x,y,z]}
 {op:"duplicate", id, newId, offset:[x,y,z]}
 {op:"delete", ids}
-{op:"subtract", ids, toolIds}
+{op:"subtract", ids, toolIds, bake?}
 {op:"group", id, name, ids}
 {op:"ungroup", id}
 ~~~
@@ -89,9 +92,9 @@ The object in create must follow the primitive schema.
 - Schemas, references and object/tool/size limits must hold after each operation:
   create objects before grouping. Objects can be created in an already existing group.
   The editable-hole pair limit is checked on the completed atomic batch; temporary
-  tools may be consumed by subtract or isolated in groups before the scene is rendered.
+  tools may be linked/consumed by subtract or isolated in groups before rendering.
 
-## Subtract: persist real cut vertices
+## Subtract: real cuts with editable tools
 
 A tool is a primitive with hole:true. Subtract accepts only full objects in ids
 and primitive hole tools in toolIds. Both lists are nonempty/distinct; groups can
@@ -100,7 +103,7 @@ Limit: 8 tools, 32 full/tool pairs, 20000 triangles per resulting piece.
 The pair count is the number of expanded targets times the number of tools for
 this subtract operation. Unrelated scene objects do not contribute. Creating tools
 with groupId:null earlier in the same batch does not trigger editable preview checks
-before they are consumed. Final editable holes still respect their own pair limit.
+before they are linked or consumed. Final editable holes still respect their own pair limit.
 
 ~~~json
 {"message":"Scavo il cubo con un foro passante.","operations":[
@@ -114,26 +117,37 @@ before they are consumed. Final editable holes still respect their own pair limi
 ]}
 ~~~
 
-The motor calculates geometry locally: cube-1 becomes a mesh retaining its ID,
-name, color, group and orientation; hole-1 is consumed. Groups do not limit this
-explicit operation. Closed mesh solids imported from JSON/STL are valid targets.
+The engine calculates geometry locally: cube-1 keeps its original shape and fields;
+hole-1 stays invisible/editable and gains targetIds:["cube-1"]. Groups do not limit
+this explicit operation. Closed mesh solids imported from JSON/STL are valid targets.
 Original tool/target roles, invalid references and no-material-removal cuts reject
-the whole batch. Every target must lose material. Fully consumed solids are removed.
+the whole batch. Every initial target must lose material. Fully consumed solids
+remain recoverable by moving or deleting tools, though they export no material.
 
-The output vertices are centered and position adjusted so remaining material stays
-in place. Cuts persist in JSON/STL without tools. Undo restores the original state.
+JSON stores original geometry and tools/links for later edits; STL contains the
+evaluated cut vertices and no tools. Move/rotate/resize the same hole ID to edit the
+opening and restore material at the previous location. Undo restores the prior state.
 For car arches, include all overlapping body/fender panels, not just fenders;
 exclude wheels. Existing correctly placed tools can be reused.
 
+Optional bake must be a boolean, default false. Only bake:true finalizes a cut:
+the output mesh is recentered without moving material; tools are consumed and fully
+consumed solids removed. Include all explicitly linked targets of those tools.
+Use this only when finalization is explicitly requested. Old baked meshes/STL do
+not retain their tool or pre-cut geometry; old openings cannot be moved independently.
+
 ## Editable holes
 
-Without subtract, hole:true tools cut full objects with identical groupId,
-including closed imported JSON/STL meshes. Null affects only ungrouped objects.
-Other groups remain unchanged. Group a part with its tools to isolate it.
+After subtract, hole:true tools cut only explicit targetIds, including closed
+imported JSON/STL meshes. Groups stay unchanged. Without targetIds, legacy/manual
+tools cut full objects with identical groupId; null affects only ungrouped objects.
+Group such tools with their parts to isolate them, or link them with subtract.
 
 Move/rotate/resize updates the actual cut; hole:false makes the tool full and
 deleting it restores material. Tools are invisible even when selected, editable
 from the object panel and excluded from STL. JSON retains original geometry/tools.
+Deleting a target removes its ID from tool lists, retaining empty lists. Setting
+hole:false retains the inactive link so enabling the hole again restores the cut.
 
 Maximum 8 tools, 32 relevant full/tool pairs including meshes, and 20000 result
 triangles per piece. Planar or zero-volume meshes cannot be cut; a nonintersecting

@@ -116,3 +116,20 @@ test('Una risposta breve usa il chiarimento precedente e lo stato modificato nel
   assert.equal(context.project.objects[0].dimensions.x,120);assert.equal(context.project.objects[0].position[0],50);
   const updated=applyOperations(history.current,{operations:reply.operations});assert.deepEqual(updated.objects[0].position,[60,0,30]);
 });
+
+test('Il pannello può spostare e ridimensionare il foro conservato da subtract',()=>{
+  const hole={...box,id:'hole',name:'Foro',hole:true,dimensions:{x:10,y:10,z:120}};
+  const source={...emptyProject(),objects:[box]};
+  const drilled=applyOperations(source,{operations:[{op:'create',object:hole},{op:'subtract',ids:['body'],toolIds:['hole']}]});
+  const history=new History(drilled),form=new Element('form'),fields=new Element('fieldset'),error=new Element('output');
+  const editor=new PropertyEditor(form,fields,error,operation=>{
+    const updated=applyOperations(history.current,{operations:[operation]});
+    const geometry=evaluatedGeometry(updated.objects[0],updated);geometry.dispose();
+    history.commit(updated);editor.render(updated.objects.find(o=>o.id==='hole'));
+  },document);
+  editor.render(drilled.objects.find(o=>o.id==='hole'));
+  editor.inputs['position.x'].value='25';editor.inputs['dimensions.x'].value='20';form.dispatchEvent(new Event('submit',{cancelable:true}));
+  assert.equal(error.textContent,'');const changed=history.current.objects.find(o=>o.id==='hole');
+  assert.equal(changed.position[0],25);assert.equal(changed.dimensions.x,20);assert.deepEqual(changed.targetIds,['body']);
+  assert.deepEqual(history.current.objects[0],box);assert.deepEqual(history.undo(),drilled);
+});

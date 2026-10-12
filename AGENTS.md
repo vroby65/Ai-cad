@@ -45,7 +45,7 @@ viewport space and exposes ARIA values. Its height is not persisted.
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
 Batches apply to a copy and remain atomic. Check schemas/references/object/tool/size
 bounds after each operation; check editable-hole pairs on the completed batch.
-Temporary tools may be consumed or grouped before rendering. Each subtract must
+Temporary tools may be linked, consumed or grouped before rendering. Each subtract must
 check its actual expanded target/tool pairs before CSG; unrelated solids do not count.
 Final projects/imports must still satisfy the editable-hole pair limit.
 Groups are flat. Mesh vertices come
@@ -66,15 +66,24 @@ Unchanged values do not add history. Reject invalid edits atomically, show inlin
 errors and retain the draft; disable editing while asynchronous work is in progress.
 
 For drilling, use subtract with explicit full ids and primitive-hole toolIds.
-Store real cut vertices, preserving ID/name/color/group/orientation. Recenter
-without moving material, consume tools, remove consumed solids and empty groups.
+Default to preserving original solids and editable tools. Store expanded targetIds
+on tools locally; do not change groups. Only explicit bake:true finalizes meshes,
+recentered without moving material, consuming tools and removing consumed solids.
+AI must use bake:true only when the user explicitly asks to finalize, including
+all explicit targets of those tools. Existing baked meshes have no recoverable
+tool/base information: never promise to independently move their old openings.
 Allow later cuts on closed meshes; reject planar/no-volume or no-material-removal
 cuts. Respect triangle limits, atomicity and undo/redo. For car arches include all
 overlapping body/fender panels but preserve wheels outside targets.
 
 Editable holes use optional boolean hole only on primitives, default false.
-They cut full objects of identical groupId, including closed JSON/STL meshes.
-Null affects ungrouped objects only. Include meshes in the 32-pair limit; retain
+With targetIds they cut only those full IDs, including closed JSON/STL meshes;
+without targetIds, retain legacy identical-group behavior (null = ungrouped only).
+Validate unique existing full IDs, including inactive links when hole:false.
+Create/update from AI cannot supply targetIds; subtract manages them. Prune links
+when targets are deleted, retaining [] to prevent implicit group fallback. Keep
+tool IDs stable; changing center/rotation/dimensions must restore the old material.
+Include linked targets/legacy meshes in the 32-pair limit; retain
 8-hole and 20000-result-triangle limits. Keep hole in the AI create/update contract.
 Tools are invisible and not exported, but selectable/editable in the object panel.
 Raycasts, selection outlines and fit ignore them. View and export use the same

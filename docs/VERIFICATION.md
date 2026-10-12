@@ -5,7 +5,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**86 tests passed** with npm test. The suite covers:
+**98 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -23,6 +23,17 @@ no PHP. Tests do not use real keys or paid API requests.
 - Baked subtract results retain IDs/metadata, consume tools and persist without
   helpers in JSON/STL. Side cuts recenter without moving remaining material;
   further mesh cuts and failed/no-effect batches are covered.
+- Default subtract preserves base solids and stable-ID tools with explicit target
+  links. Moving a tool restores the old material and cuts the new position, verified
+  by real raycasts, STL volume and stable view meshes. Resizing, disabling/deleting
+  tools, multiple tools and full-removal recovery are covered. Groups/unrelated
+  parts stay unchanged; many ungrouped objects do not inflate linked pair counts.
+- Closed STL sources keep their original vertices after drilling and retain editable
+  holes through JSON, undo/redo and exports. The property form moves/resizes a retained
+  tool. Four car arches persist after JSON reopening and individual tool movement,
+  preserving wheels. Target references, deletion pruning, empty target lists and
+  baked partial-finalization guards are validated. bake:true explicitly covers the
+  previous finalized-mesh behavior; mocked AI uses editable cuts by default.
 - Temporary tools in a crowded scene can be consumed by subtract or isolated by
   grouping in the same batch, despite exceeding preview pairs at an intermediate
   step. Final editable-hole limits and actual subtract pair limits remain enforced;

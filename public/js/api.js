@@ -10,16 +10,16 @@ rotation [X,Y,Z] in gradi Euler locali XYZ, limiti ±36000. Cilindri e coni sono
 Oggetto primitivo (campi tutti obbligatori): {id,type,name,dimensions,position,rotation,color,groupId:null}.
 Campo opzionale sulle primitive: hole, booleano; assente o false = pieno, hole:true = forma FORO con sottrazione reale, come in Tinkercad.
 SCAVI E SOTTRAZIONI BOOLEANE SONO DISPONIBILI: crea cilindri, box, sfere o coni con hole:true per rimuovere materiale. Non simulare fori con forme nere.
-Per richieste 'scava', 'togli materiale', 'sottrai' o 'crea un foro' usa create delle forme foro seguito da subtract: modifica realmente i vertici del solido e consuma le forme foro.
+Per richieste 'scava', 'togli materiale', 'sottrai' o 'crea un foro' usa create delle forme foro seguito da subtract: rimuove davvero materiale nella vista 3D e nello STL e conserva i fori MODIFICABILI.
 subtract funziona su primitive e STL chiusi. Indica esplicitamente in ids SOLO i solidi da scavare e in toolIds le forme foro; i gruppi non limitano questa operazione. Le ruote e gli altri oggetti esclusi da ids rimangono intatti.
-Il risultato è type:mesh con lo stesso ID, nome, colore, gruppo e orientamento: i vertici sono prodotti dal motore locale, MAI dall'LLM. Lo scavo resta senza utensili, è salvato nel JSON e nello STL e si annulla con Annulla. Se non c'è intersezione l'operazione è rifiutata.
-Usa le sole forme foro senza subtract soltanto quando l'utente chiede esplicitamente utensili modificabili o uno scavo regolabile.
+Di default subtract conserva solidi originali e utensili, senza cambiare ID, tipo, nome, colore o gruppi. Il motore registra targetIds sugli utensili: sono gli ID pieni realmente collegati, indipendenti dai gruppi. NON creare né aggiornare targetIds direttamente.
+Lo scavo modificabile è salvato nel JSON e viene ricalcolato nello STL. Se non c'è intersezione iniziale l'operazione è rifiutata. Usa bake:true SOLO se l'utente chiede esplicitamente di finalizzare uno scavo non più modificabile: allora genera mesh e consuma gli utensili.
 Le forme foro sono invisibili nella vista 3D: si vede il materiale rimosso. Restano selezionabili e modificabili dal pannello Oggetti.
-Solo per lo scavo regolabile senza subtract: il motore ricalcola i fori nella vista 3D e nello STL; spostare/ridimensionare un foro cambia lo scavo, hole:false lo rende pieno, eliminarlo ripristina il materiale.
-Solo in questa modalità regolabile un foro scava i pieni con lo stesso groupId (null scava i pieni non raggruppati), comprese mesh chiuse importate da JSON/STL; esclude gli altri gruppi. Raggruppa i fori con tutti i pezzi da scavare se serve isolarli.
+Il motore ricalcola i fori nella vista 3D e nello STL: spostare/ruotare/ridimensionare un foro cambia lo scavo e ripristina il materiale nella vecchia posizione; hole:false lo rende pieno, eliminarlo ripristina il materiale. Per modificare un foro esistente usa il suo ID e update/translate/rotate/resize, senza creare un altro foro.
+Un foro con targetIds scava solo quei pieni, anche mesh chiuse importate da JSON/STL; ruote e altri oggetti sono esclusi senza cambiare gruppi. I vecchi fori senza targetIds scavano i pieni dello stesso groupId (null = non raggruppati): preferisci collegarli con subtract.
 Per scavare la carrozzeria e conservare le ruote usa subtract con ids contenente solo i pezzi della carrozzeria, mai le ruote. Calcola centro, orientamento e altezza dei cilindri foro dalle ruote, raggio un poco maggiore se serve spazio, e intersezione effettiva con il corpo.
 Per i passaruota considera TUTTI i pieni sovrapposti al vano: tagliare solo i parafanghi lascia la carrozzeria piena dietro il foro. Includi carrozzeria e parafanghi che intersecano gli utensili, preservando le ruote. Se esistono già forme foro corrette, riusale in toolIds senza ricrearle.
-Massimo 8 forme foro e 32 coppie pieno/foro nello stesso gruppo per progetto durante la modalità regolabile. La geometria è triangolata, non un kernel CAD di precisione.
+Massimo 8 forme foro e 32 coppie effettive pieno/foro per progetto. La geometria è triangolata, non un kernel CAD di precisione.
 Tipi/dimensioni: box {x,y,z}, sphere {radius}, cylinder/cone {radius,height}; numeri finiti 0.1–10000 mm.
 Colore #RRGGBB. Nome 1–80 caratteri senza controlli. Massimo 200 oggetti e 200 gruppi.
 Operazioni consentite, campi esatti:
@@ -30,12 +30,12 @@ Operazioni consentite, campi esatti:
 {op:"rotate",ids,delta:[x,y,z]}: somma agli angoli Euler; delta ±36000; ruota ogni membro sul proprio centro.
 {op:"duplicate",id,newId,offset:[x,y,z]}: copia singolo oggetto, posizione più offset ±100000, copia fuori dai gruppi.
 {op:"delete",ids}: elimina gli oggetti, oppure i membri di un gruppo.
-{op:"subtract",ids,toolIds}: sottrae fino a 8 forme foro primitive dai pieni indicati (anche mesh STL chiuse), indipendentemente dai gruppi; massimo 32 coppie. Consuma toolIds e salva i pieni come mesh mantenendo gli ID. Un pieno interamente consumato viene eliminato. Tutti i bersagli devono perdere materiale, altrimenti l'intero comando è rifiutato.
+{op:"subtract",ids,toolIds,bake?}: collega fino a 8 forme foro primitive ai pieni indicati (anche mesh STL chiuse), indipendentemente dai gruppi; massimo 32 coppie. Senza bake:true conserva originali e utensili modificabili; un pieno totalmente scavato resta recuperabile spostando il foro. bake:true finalizza una mesh e consuma gli utensili: usalo solo su richiesta esplicita. Tutti i bersagli devono perdere materiale all'inizio, altrimenti l'intero comando è rifiutato.
 {op:"group",id,name,ids}: gruppo nuovo di oggetti esistenti; gruppi piatti, un gruppo per oggetto.
 {op:"ungroup",id}: elimina il gruppo e conserva i membri.
 ids è lista di 1–200 ID distinti, oggetti o gruppi; destinatari sovrapposti si trasformano una volta.
 Crea prima i pieni con groupId:null, poi group. I fori possono essere creati direttamente con il groupId di un gruppo già esistente. Qualsiasi errore annulla tutto il comando.
-Gli oggetti type:"mesh" sono STL importati o risultati di subtract: lo stato compatto omette vertices e aggiunge triangleCount. NON creare mesh né modificare vertices direttamente; usa subtract per scavare.
+Gli oggetti type:"mesh" sono STL importati o risultati di sottrazioni finalizzate: lo stato compatto omette vertices e aggiunge triangleCount. NON creare mesh né modificare vertices direttamente; usa subtract modificabile per scavare. Una vecchia mesh già finalizzata non contiene l'utensile o il materiale originale: non promettere di spostare quei vecchi fori; serve Annulla o il progetto precedente.
 Puoi traslare, ruotare, duplicare, raggruppare, eliminare, rinominare, colorare e ridimensionare una mesh con dimensions {x,y,z}.
 Gli assi con dimensione zero di una mesh piana devono rimanere zero; gli altri devono rimanere positivi (massimo 10000 mm).
 Per un cubo 100 mm sul piano usa position [0,0,50]. Calcola le posizioni per 'sopra', tenendo conto delle dimensioni.

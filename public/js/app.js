@@ -54,6 +54,7 @@ function renderObjects() {
     for(const [label,value] of [['ID',object.id],['Tipo',object.type]]) {
       $('property-list').append(node('dt',label),node('dd',value));
     }
+    if(object.hole && object.targetIds) $('property-list').append(node('dt','Scava'),node('dd',object.targetIds.map(id=>state.objects.find(o=>o.id===id).name).join(' · ')||'Nessun solido'));
   }
   propertyEditor.render(object,busy);
 }
@@ -146,7 +147,7 @@ $('object-hole').addEventListener('change',()=>{
   if(busy||!selectedId) { renderObjects(); return; }
   try {
     const project=applyOperations(history.current,{operations:[{op:'update',id:selectedId,changes:{hole:$('object-hole').checked}}]});
-    commit(project); message($('object-hole').checked ? 'Forma foro: sottrae materiale ai pieni nello stesso gruppo.' : 'Forma riportata a pieno.');
+    commit(project); message($('object-hole').checked ? 'Forma foro: sottrae materiale ai bersagli collegati, o ai pieni nello stesso gruppo se non ha collegamenti.' : 'Forma riportata a pieno.');
   } catch(error) { renderObjects(); message(error.message,true); }
 });
 $('frame').addEventListener('click',()=>view.frame());

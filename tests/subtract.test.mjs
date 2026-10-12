@@ -13,7 +13,7 @@ import { explain } from '../public/js/explain.js';
 const body={id:'body',type:'box',name:'Blocco',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
 const tool={...body,id:'tool',name:'Scavo',hole:true,dimensions:{x:20,y:20,z:120}};
 const state=(objects=[body,tool],groups=[])=>({...emptyProject(),objects,groups});
-const cut={op:'subtract',ids:['body'],toolIds:['tool']};
+const cut={op:'subtract',ids:['body'],toolIds:['tool'],bake:true};
 function volume(data) {
   let total=0;
   for(let i=0;i<data.getUint32(80,true);i++) {
@@ -81,7 +81,7 @@ test('Quattro vani ruota modificano definitivamente la carrozzeria e conservano 
   const car=JSON.parse(await readFile(new URL('../public/examples/car.json',import.meta.url),'utf8'));
   const wheels=car.objects.filter(o=>o.groupId==='wheels');
   const cutters=wheels.map((o,i)=>({...o,id:'cut-'+i,name:'Vano ruota',hole:true,groupId:null,dimensions:{radius:32,height:40}}));
-  const updated=applyOperations(car,{operations:[...cutters.map(object=>({op:'create',object})),{op:'subtract',ids:['chassis'],toolIds:cutters.map(o=>o.id)}]});
+  const updated=applyOperations(car,{operations:[...cutters.map(object=>({op:'create',object})),{op:'subtract',ids:['chassis'],toolIds:cutters.map(o=>o.id),bake:true}]});
   assert.equal(updated.objects.find(o=>o.id==='chassis').type,'mesh'); assert.equal(updated.objects.filter(o=>o.hole).length,0);
   for(const wheel of wheels) assert.deepEqual(updated.objects.find(o=>o.id===wheel.id),wheel);
   assert.ok(volume(exportSTL(updated))<volume(exportSTL(car))-1000);
@@ -106,7 +106,7 @@ async function crowdedCar() {
 test('Quattro utensili temporanei in una scena affollata sono consumati da subtract senza contare pieni estranei',async t=>{
   const {original,tools,creates}=await crowdedCar(),snapshot=structuredClone(original);
   assert.equal(original.objects.filter(o=>o.groupId===null).length*tools.length,36);
-  const response={message:'Scavo quattro passaruota solo nella carrozzeria.',operations:[...creates,{op:'subtract',ids:['chassis'],toolIds:tools.map(o=>o.id)}]};
+  const response={message:'Scavo quattro passaruota solo nella carrozzeria.',operations:[...creates,{op:'subtract',ids:['chassis'],toolIds:tools.map(o=>o.id),bake:true}]};
   t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(response)}}]})));
   const parsed=await interpretDeepSeek('Scava quattro passaruota',original,'chassis',{key:'test-key'});
   const updated=applyOperations(original,{operations:parsed.operations});

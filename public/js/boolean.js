@@ -5,7 +5,7 @@ import { MAX_BOOLEAN_TRIANGLES } from './limits.js';
 
 function holesFor(object,project) {
   if(object.hole) return [];
-  return project.objects.filter(hole=>hole.hole===true && hole.groupId===object.groupId);
+  return project.objects.filter(hole=>hole.hole===true && (hole.targetIds ? hole.targetIds.includes(object.id) : hole.groupId===object.groupId));
 }
 export function geometrySignature(object,project) {
   const holes=holesFor(object,project);
@@ -95,7 +95,7 @@ export function carveObject(object,tools) {
     const center=geometry.boundingBox.getCenter(new THREE.Vector3()),size=geometry.boundingBox.getSize(new THREE.Vector3());
     const position=center.clone().applyMatrix4(transform(object));
     geometry.translate(-center.x,-center.y,-center.z);
-    const {hole,vertices,...result}=object;
+    const {hole,targetIds,vertices,...result}=object;
     return {...result,type:'mesh',dimensions:{x:size.x,y:size.y,z:size.z},position:position.toArray(),vertices:Array.from(geometry.getAttribute('position').array)};
   } finally { geometry.dispose(); }
 }
