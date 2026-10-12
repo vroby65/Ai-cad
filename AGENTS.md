@@ -79,7 +79,12 @@ bounds after each operation; check editable-hole pairs on the completed batch.
 Temporary tools may be linked, consumed or grouped before rendering. Each subtract must
 check its actual expanded target/tool pairs before CSG; unrelated solids do not count.
 Final projects/imports must still satisfy the editable-hole pair limit.
-Groups are flat. Mesh vertices come
+Groups are flat. In create only, a new groupId can be deferred to a later group
+operation in the same batch that explicitly lists that object's ID. Normalize the
+temporary assignment to null; assign it when group executes. Do not create groups
+early, reorder operations or allow missing group references in saved projects.
+Undeclared/malformed groups and attempts to target them before group remain errors.
+Mesh vertices come
 only from valid file imports or locally calculated subtraction, never from the AI.
 DeepSeek sees compact mesh data with triangleCount, not vertices. Send bounded
 session conversation before the final command/state: at most forty alternating

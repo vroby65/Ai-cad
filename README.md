@@ -99,6 +99,8 @@ Stable IDs preserve object identity.
 The AI returns strictly validated JSON operations, never executable code.
 Unknown fields, bad types, missing IDs and excessive sizes are rejected.
 Each batch is atomic: an error leaves the original project intact.
+Objects can refer to a group declared later in the same command when that group
+explicitly lists them. Undeclared group references remain errors.
 
 ## Profiles and deformations
 

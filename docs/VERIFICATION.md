@@ -5,10 +5,15 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**136 tests passed** with npm test. The suite covers:
+**140 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
+- Reported bus batch: twelve create operations name a group declared only by the
+  final operation. Three failing regressions preceded the fix. Deferred membership,
+  unchanged inputs/IDs, JSON/STL, undo/redo and mocked API interpretation are checked.
+  Missing membership/declarations, malformed/duplicate groups, invalid dimensions,
+  imported missing references and targeting a group before its creation remain errors.
 - Relative rotation regression: an X-tilted cylinder must turn on world Z rather
   than merely adding its Euler Z component. Three failing regressions preceded the
   fix. Quaternion composition, multi-axis order/inverse, stable IDs, JSON/undo/redo,
@@ -120,6 +125,12 @@ native file dialogs and downloads have not been clicked by an automated browser.
 ## Additional checks
 
 - JavaScript syntax and git diff --check pass.
+- Replaying the exact bus response from the user's diagnostic log now produces
+  twelve objects, one group and an STL with 864 triangles. Recoverable JSON/STL
+  copies were saved outside the repository without overwriting user files.
+  The aircraft response had successfully applied nine objects but placed its wings
+  vertically and its tail along height instead of length. World-position/assembly
+  guidance was added to the AI contract; new authenticated generation is unverified.
 - Local Apache serves the app and updated modules with HTTP 200 below a project
   subdirectory; the retired PHP API and legacy files are not public.
 - An actual user-provided car JSON reproduced a blocked wheel-arch opening:

@@ -140,11 +140,17 @@ export function applyOperations(state,batch) {
     try {
     if(!op || typeof op.op!=='string') throw new Error('Operazione non valida.');
     switch(op.op) {
-      case 'create':
+      case 'create': {
         fields(op,['op','object']); object(op.object); unused(next,op.object.id);
         if(op.object.type==='mesh') throw new Error('Le mesh si creano con Importa STL, non tramite AI.');
         if(Object.hasOwn(op.object,'targetIds')) throw new Error('I bersagli dei fori si collegano con subtract, non con create.');
-        next.objects.push(structuredClone(op.object)); break;
+        const created=structuredClone(op.object);
+        if(created.groupId!==null && !next.groups.some(group=>group.id===created.groupId)) {
+          const declared=batch.operations.slice(index+1).some(later=>later?.op==='group' && later.id===created.groupId && Array.isArray(later.ids) && later.ids.includes(created.id));
+          if(declared) created.groupId=null;
+        }
+        next.objects.push(created); break;
+      }
       case 'update':
         fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole','profile','modifiers']);
         if(!Object.keys(op.changes).length) throw new Error('Modifiche vuote.');

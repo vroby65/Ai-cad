@@ -178,6 +178,11 @@ The object in create must follow the primitive schema.
   Ungroup preserves members; delete on a group deletes members. Empty groups vanish.
 - Schemas, references and object/tool/size limits must hold after each operation:
   create objects before grouping. Objects can be created in an already existing group.
+  Prefer groupId:null for new pieces. A create may name a new group only if a later
+  group operation in the same batch explicitly includes that object's ID in ids.
+  The engine keeps it ungrouped until group executes; this does not make the group
+  available to earlier transformations. Missing declarations/membership remain
+  errors, and imported project JSON still requires every groupId to exist.
   The editable-hole pair limit is checked on the completed atomic batch; temporary
   tools may be linked/consumed by subtract or isolated in groups before rendering.
 

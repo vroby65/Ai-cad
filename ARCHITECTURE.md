@@ -44,6 +44,10 @@ with exact message/operations fields, a bounded explanation and allowed operatio
 applyOperations works on a copy and validates schemas, references and resource bounds
 after each operation. Editable-hole pair limits are checked on the completed batch,
 so temporary tools can be linked/consumed by subtract or isolated by grouping before preview.
+If create names a new group declared later in the batch with explicit membership,
+its temporary groupId is normalized to null until group executes. This handles
+the reported bus response without reordering operations, creating groups early or
+weakening stored-project validation. Undeclared references still reject the batch.
 Each subtract independently checks its actual target/tool pair count before CSG.
 Errors reject the whole batch. Only a prepared, valid result is committed.
 
@@ -62,6 +66,10 @@ assistant response had primed the model to output applied/objectIds rather than
 operations. Explicit valid command examples reinforce the actual output format;
 clear modeling requests use reasonable defaults rather than asking for routine
 confirmation. Metadata-shaped replies remain invalid and receive a specific error.
+The contract also distinguishes world positions from local shape orientation and
+recommends X for vehicle length, Y for width and Z for height. This addresses the
+reported aircraft's vertical wings and misplaced tail at the instruction level;
+the geometry engine does not silently rewrite valid model coordinates.
 Failed turns record applied:false with a safe error, never rejected raw JSON or
 unexecuted operations. In-flight turns are excluded. The API accepts only alternating
 user/assistant pairs (at most forty), trimming older whole pairs to a 128 KiB UTF-8
