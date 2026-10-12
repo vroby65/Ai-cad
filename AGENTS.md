@@ -9,6 +9,7 @@ archive outside the public deployment.
 - UI/integration: public/index.html, public/style.css, public/js/app.js.
 - Chat: public/js/chat.js; explanations: explain.js; resizer: layout.js.
 - Local diagnostic events/redaction: public/js/diagnostics.js and app.js.
+- Optional loopback log collection: public/js/local-diagnostics.js and scripts/diagnostics-server.mjs.
 - Selected-object form: public/js/properties.js, integrated through app.js.
 - Schemas/operations: project.js; limits: limits.js; AI: api.js.
 - Key storage/balance: account.js and app.js.
@@ -39,7 +40,12 @@ Diagnostics stay in session memory (100 events/256 KiB compact JSON), downloadab
 and clearable from the chat. Record phases/timing, compact scene, prompt, bounded
 output and failure details. Redact the current key, recognizable key/Bearer strings
 and sensitive fields before storing; omit headers, mesh vertices and reasoning
-content. No automatic uploads, persistence or paid retries. Never commit user logs.
+content. No remote uploads or paid retries. On localhost only, the optional Node
+collector on 127.0.0.1:8001 writes redacted snapshots to ignored .local/logs/ outside
+public. Preserve last-failure.json across startup; explicit clear removes it.
+Reject non-loopback origins, arbitrary paths and oversized/malformed snapshots.
+Collector failures must not block CAD. npm run logs starts it; Pages never contacts it.
+Never commit user logs.
 Preserve original errors while adding operation index/target or geometry object ID.
 Keep the Italian interface and Italian explanations; public documentation and
 repository metadata are English. The AI contract is {message,operations}; message
@@ -69,8 +75,13 @@ Groups are flat. Mesh vertices come
 only from valid file imports or locally calculated subtraction, never from the AI.
 DeepSeek sees compact mesh data with triangleCount, not vertices. Send bounded
 session conversation before the final command/state: at most forty alternating
-user/assistant pairs within 128 KiB. Assistant summaries contain message, applied
-and objectIds. Keep clarification-only replies; failed turns have applied:false,
+user/assistant pairs within 128 KiB. Internal assistant summaries contain message,
+applied and objectIds, but convert them to labeled plain text before sending to the
+provider. Never expose that internal JSON as an example assistant response: the
+reported 2CV failure copied its keys instead of returning operations. Keep explicit
+valid response examples and tell the model to act on clear modeling requests with
+reasonable dimensions, without unnecessary confirmations. Strictly reject metadata
+responses; never pretend missing operations were applied. Keep clarification-only replies; failed turns have applied:false,
 without rejected raw output or unexecuted operations. Pending turns are excluded.
 Current state/selection override historical references after manual edits/undo.
 Never persist chat to localStorage or project files; reset when opening JSON/examples.

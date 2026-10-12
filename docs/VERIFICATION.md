@@ -5,7 +5,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**127 tests passed** with npm test. The suite covers:
+**130 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -79,6 +79,16 @@ no PHP. Tests do not use real keys or paid API requests.
 - Conversation memory: clarification replies, stable affected IDs, pending-turn
   exclusion, failures marked unapplied, whole recent pairs within a 128 KiB UTF-8
   budget, strict roles and unchanged caller data. Rejected raw JSON is not sent.
+- Reported 2CV schema failure: internal memory fields were being sent as assistant
+  JSON and appeared in the provider's reply instead of operations. A regression
+  reproduces that format collision using simulated provider output; plain-text
+  historical summaries retain explanations/IDs/outcomes without that JSON template.
+  The malformed metadata reply remains rejected, and valid operation examples are
+  included in the system contract. Real provider behavior after this fix is unverified.
+- Real loopback diagnostic collector: private redacted disk snapshots, retained
+  last failure after startup, explicit clearing, size/schema limits, foreign-origin
+  and arbitrary-route/read rejection. Browser delivery is simulated and only
+  enabled on loopback hosts; remote pages and offline collectors do not block CAD.
 - Selected-object forms: all primitive dimensions, planar mesh axes, names/colors,
   center/rotation/dimensions, invalid values, atomic edits, unchanged submissions,
   busy/selection handling and undo/redo. Real imported STL is resized/exported;
@@ -141,10 +151,14 @@ archived PHP and user project files are excluded.
 
 ## Remaining verification
 
-The latest user-reported failed command/response was not provided. The inherited
-provider thinking default was identified and disabled; error misclassification was
-reproduced and fixed. These findings do not prove the precise cause of that user's
-failure. New session logs can identify its HTTP, response, schema or geometry stage.
+The user provided a failed 2CV reply with message/applied/objectIds and no operations.
+It matches the internal chat-memory schema formerly sent as assistant JSON. The
+same schema rejection was reproduced, and the outgoing history was changed to
+plain text with strict valid command examples. A separate pasted diagnostic snapshot
+contained startup only, so it did not preserve those earlier failed attempts.
+The optional loopback collector now makes subsequent redacted logs readable from
+disk and retains the last failure across page reloads. No authenticated post-fix
+DeepSeek request was performed, so generated-model quality remains unverified.
 Fresh unauthenticated CORS preflights for localhost and Pages returned HTTP 200 with
 matching allowed origins, POST and authorization/content-type headers.
 

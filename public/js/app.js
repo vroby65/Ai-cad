@@ -10,17 +10,21 @@ import { ChatView } from './chat.js';
 import { setupChatResize } from './layout.js';
 import { PropertyEditor } from './properties.js';
 import { Diagnostics } from './diagnostics.js';
+import { localDiagnostics } from './local-diagnostics.js';
 
 const $=id=>document.getElementById(id);
+let logTimer;
 const diagnostics=new Diagnostics(()=>$('deepseek-key').value,()=>{
   $('diagnostic-output').textContent=diagnostics.export();
   $('diagnostic-count').textContent=String(diagnostics.entries.length);
+  clearTimeout(logTimer);logTimer=setTimeout(saveLocalLogs,200);
 });
+const saveLocalLogs=localDiagnostics(diagnostics);
 $('download-log').addEventListener('click',()=>download(diagnostics.export(),'deepcad-diagnostics.json','application/json'));
 $('clear-log').addEventListener('click',()=>diagnostics.clear());
 window.addEventListener('error',event=>{diagnostics.record('runtime-error',{message:event.message,line:event.lineno});$('diagnostics').open=true;});
 window.addEventListener('unhandledrejection',event=>{diagnostics.record('runtime-error',{message:event.reason?.message||String(event.reason)});$('diagnostics').open=true;});
-diagnostics.record('startup',{build:'diagnostics-1',model:'deepseek-flash',thinking:'disabled'});
+diagnostics.record('startup',{build:'memory-fix-2',model:'deepseek-flash',thinking:'disabled'});
 $('deepseek-key').value=readKey();
 const history=new History(emptyProject());
 const chat=new ChatView($('chat-messages'));

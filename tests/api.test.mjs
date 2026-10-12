@@ -90,7 +90,9 @@ test('I messaggi precedenti precedono il comando corrente; la scena attuale rest
   t.mock.method(globalThis,'fetch',async(url,options)=>{payload=JSON.parse(options.body);return new Response(JSON.stringify(envelope({message:'Quali misure vuoi?',operations:[]})));});
   const messages=[{role:'user',content:'Vorrei un robot con due antenne'},{role:'assistant',content:JSON.stringify({message:'Preferisci antenne cilindriche o coniche?',applied:true,objectIds:[]})}];
   await interpretDeepSeek('Coniche, grazie',emptyProject(),null,{key:'test-key',messages});
-  assert.deepEqual(payload.messages.slice(1,-1),messages);
+  assert.deepEqual(payload.messages[1],messages[0]);
+  assert.match(payload.messages[2].content,/Preferisci antenne cilindriche o coniche\?/);
+  assert.doesNotMatch(payload.messages[2].content,/"applied"|"objectIds"/);
   assert.equal(JSON.parse(payload.messages.at(-1).content).command,'Coniche, grazie');
   assert.ok(payload.messages[0].content.includes('stato corrente'));
   assert.equal(payload.messages[0].role,'system');
@@ -130,4 +132,20 @@ test('Errori locali non diventano falsi errori di rete e il JSON vuoto ha un mes
   t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify(envelope(batch))));
   await assert.rejects(()=>interpretDeepSeek('Crea un cubo',emptyProject(),null,{key:'test-key',onOutput:()=>{throw new TypeError('Errore locale');}}),/Errore locale/);
   assert.throws(()=>parseEnvelope({choices:[{finish_reason:'stop',message:{content:''}}]},emptyProject()),/vuot/i);
+});
+
+test('Il caso 2CV non espone al modello il JSON di memoria che veniva copiato come risposta',async t=>{
+  const messages=[{role:'user',content:'Migliora la 2CV'},{role:'assistant',content:JSON.stringify({message:'Posso migliorare la sagoma e conservare le ruote. Confermi?',applied:true,objectIds:['cube-1']})}],snapshot=structuredClone(messages);
+  let payload;
+  t.mock.method(globalThis,'fetch',async(url,options)=>{
+    payload=JSON.parse(options.body);
+    const polluted=payload.messages.some(m=>m.role==='assistant'&&m.content.includes('"objectIds"'));
+    return new Response(JSON.stringify(envelope(polluted?{message:'Confermi?',applied:true,objectIds:[]}:{message:'Creo la sagoma.',...batch})));
+  });
+  const reply=await interpretDeepSeek('Disegna una 2CV il più possibile simile all’originale',emptyProject(),null,{key:'test-key',messages});
+  assert.equal(reply.operations.length,1);assert.deepEqual(messages,snapshot);
+  assert.match(payload.messages[2].content,/cube-1/);assert.match(payload.messages[2].content,/Esito precedente:/);
+  assert.match(payload.messages[0].content,/non chiedere conferma/i);
+  assert.match(payload.messages[0].content,/ESEMPIO JSON/);
+  assert.throws(()=>parseEnvelope(envelope({message:'Confermi?',applied:true,objectIds:[]}),emptyProject()),/operations.*applied.*objectIds/);
 });

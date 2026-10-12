@@ -264,10 +264,13 @@ Command is 1–2000 characters; selection is null or an existing object ID.
 Mesh context omits vertices and adds triangleCount. This compact context is not
 a saveable project. Mesh vertices are never sent.
 
-Previous user messages contain their prompts; assistant context is a JSON summary
-{message,applied,objectIds}. It includes explanations/clarifications and stable IDs,
-not executable operations or rejected raw output. applied:false means the request
-failed with no scene changes. At most 40 whole pairs within 128 KiB UTF-8 are sent,
+Previous user messages contain their prompts. Internal assistant memory uses
+{message,applied,objectIds}, converted before sending into labeled plain-text
+explanation, historical outcome and involved IDs. It is not sent as a JSON response
+template. The reported metadata-shaped 2CV response is rejected; the output must
+contain operations, with no applied/objectIds. Explanations/clarifications and stable
+IDs persist; executable operations and rejected raw output are omitted. Failed
+requests are labeled as errors with no changes. At most 40 whole pairs within 128 KiB UTF-8 are sent,
 keeping the most recent pairs. Current project/selection override historical context.
 Conversation is session-only and resets when a JSON file or example opens.
 See [DeepSeek's multi-round guide](https://api-docs.deepseek.com/guides/multi_round_chat).

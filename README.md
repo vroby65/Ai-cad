@@ -246,12 +246,30 @@ number and target ID; geometry errors identify the object. Empty and token-trunc
 responses have distinct messages, and local JavaScript errors are not labeled as
 network failures.
 
-Logs stay in memory in the current tab, with no automatic upload or disk storage.
-Download them before reloading. They include project names, commands and model output;
+Logs stay in memory in the current tab unless the optional local collector is running.
+Download them before reloading when it is unavailable. They include project names, commands and model output;
 API keys, Authorization headers, source mesh vertices and reasoning content are
 excluded/redacted. The buffer retains at most 100 events within 256 KiB of compact
 JSON; oversized records are marked as truncated previews. Log files do not belong
 in the public repository. Failed commands leave the editable project unchanged.
+
+For automatic local collection, start a second terminal in the repository:
+
+~~~bash
+npm run logs
+~~~
+
+This optional Node service binds only to 127.0.0.1:8001. Locally served DeepCAD sends
+redacted snapshots to it and stores `.local/logs/latest.json` plus
+`.local/logs/last-failure.json`, outside public and ignored by Git. A new page startup
+preserves the last failure; **Cancella log** removes it when the collector is available.
+Collector errors do not interrupt modeling. GitHub Pages does not send logs to it.
+
+The chat keeps its internal result/ID summaries separate from the provider's output
+format: they are sent as plain-text history rather than competing JSON examples.
+Clear drawing/revision requests ask the model to produce operations using reasonable
+defaults instead of stopping at a proposal. Responses with only message/applied/
+objectIds cannot change a model and remain explicitly rejected.
 
 Node.js 20.6+, without installing packages or using a real key:
 

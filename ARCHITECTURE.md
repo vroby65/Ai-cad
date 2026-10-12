@@ -24,6 +24,7 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/import.js, js/export.js | ASCII/binary STL import and evaluated STL export |
 | examples/, vendor/ | Starter models, pinned dependencies and licenses |
 | scripts/serve.mjs | Loopback-only static server |
+| scripts/diagnostics-server.mjs, js/local-diagnostics.js | Optional private local diagnostic snapshots |
 | tests/ | Node tests without PHP or paid API calls |
 
 The first paths are relative to public/.
@@ -55,6 +56,12 @@ The chat retains forty exchanges in the DOM and resets when a project opens.
 Raw JSON details open manually, or automatically for errors. There is no CoderDojo
 selector. Completed turns retain the user prompt and a compact assistant summary
 with message, applied and affected objectIds, including clarification-only replies.
+Before HTTP serialization the API converts these summaries into labeled plain text
+containing the prior explanation, result and IDs. Sending their internal JSON as an
+assistant response had primed the model to output applied/objectIds rather than
+operations. Explicit valid command examples reinforce the actual output format;
+clear modeling requests use reasonable defaults rather than asking for routine
+confirmation. Metadata-shaped replies remain invalid and receive a specific error.
 Failed turns record applied:false with a safe error, never rejected raw JSON or
 unexecuted operations. In-flight turns are excluded. The API accepts only alternating
 user/assistant pairs (at most forty), trimming older whole pairs to a 128 KiB UTF-8
@@ -76,12 +83,21 @@ adds the compact source scene, prompt, bounded output and geometry/application p
 Diagnostics removes sensitive field names, the current key and recognizable key/
 Bearer strings before storing or displaying entries. It retains at most 100 events
 and 256 KiB of compact JSON; records above 64 KiB become marked bounded previews.
-There is no persistence, automatic upload or paid retry. The expandable chat panel
+There is no remote upload or paid retry. The expandable chat panel
 renders textContent and supports explicit download/clear. Startup/WebGL/runtime errors
 are recorded after app module loading; a failed initial module import cannot be
 captured by that module. Operation wrappers add index/target; geometry preparation
 adds object identity. Error classification only treats network/body TypeErrors as
 connection failures, preserving local validation/UI errors for diagnosis.
+
+An optional Node collector listens only on 127.0.0.1:8001. Only pages served from
+HTTP loopback origins send redacted snapshots, with a two-second timeout and no
+CAD dependency on delivery. The collector accepts POST/OPTIONS on one fixed route,
+limits bodies to 768 KiB, checks snapshot fields and redacts again. Serialized atomic
+writes store latest.json and last-failure.json under ignored .local/logs/, outside
+public, with private filesystem permissions. Startup does not erase the last failure;
+clearing an empty log removes it. Remote origins, reads and arbitrary paths are
+rejected. GitHub Pages never contacts this service. Start it with npm run logs.
 
 ## Selected-object editing
 

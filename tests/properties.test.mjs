@@ -115,7 +115,7 @@ test('Una risposta breve usa il chiarimento precedente e lo stato modificato nel
     return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify({message:'Sposto il corpo di 10 mm lungo X.',operations:[{op:'translate',ids:['body'],delta:[10,0,0]}]})}}]}));
   });
   const reply=await interpretDeepSeek('Di 10 mm',history.current,'body',{key:'test-key',messages:chat.messages()});
-  assert.equal(JSON.parse(payload.messages[2].content).message,'Di quanti millimetri lo sposto lungo X?');
+  assert.match(payload.messages[2].content,/Di quanti millimetri lo sposto lungo X\?/);
   const context=JSON.parse(payload.messages.at(-1).content);assert.equal(context.selectedId,'body');
   assert.equal(context.project.objects[0].dimensions.x,120);assert.equal(context.project.objects[0].position[0],50);
   const updated=applyOperations(history.current,{operations:reply.operations});assert.deepEqual(updated.objects[0].position,[60,0,30]);
