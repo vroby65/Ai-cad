@@ -86,8 +86,10 @@ The object in create must follow the primitive schema.
   members, with overlapping recipients deduplicated.
 - Group creates a new flat group and moves members from previous groups.
   Ungroup preserves members; delete on a group deletes members. Empty groups vanish.
-- The state must be valid after each operation: create objects before grouping.
-  Objects can be created in an already existing group.
+- Schemas, references and object/tool/size limits must hold after each operation:
+  create objects before grouping. Objects can be created in an already existing group.
+  The editable-hole pair limit is checked on the completed atomic batch; temporary
+  tools may be consumed by subtract or isolated in groups before the scene is rendered.
 
 ## Subtract: persist real cut vertices
 
@@ -95,6 +97,10 @@ A tool is a primitive with hole:true. Subtract accepts only full objects in ids
 and primitive hole tools in toolIds. Both lists are nonempty/distinct; groups can
 expand, but must contain objects with the correct roles.
 Limit: 8 tools, 32 full/tool pairs, 20000 triangles per resulting piece.
+The pair count is the number of expanded targets times the number of tools for
+this subtract operation. Unrelated scene objects do not contribute. Creating tools
+with groupId:null earlier in the same batch does not trigger editable preview checks
+before they are consumed. Final editable holes still respect their own pair limit.
 
 ~~~json
 {"message":"Scavo il cubo con un foro passante.","operations":[

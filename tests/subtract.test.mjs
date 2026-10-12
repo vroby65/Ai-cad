@@ -95,3 +95,41 @@ test('Il contratto DeepSeek autorizza la sottrazione e applica il taglio allo ST
   assert.ok(payload.messages[0].content.includes('toolIds')); assert.ok(payload.messages[0].content.includes('STL chiusi'));
   near(volume(exportSTL(applyOperations(original,{operations:batch.operations}))),960000);
 });
+
+async function crowdedCar() {
+  const {readFile}=await import('node:fs/promises');
+  const original=JSON.parse(await readFile(new URL('../public/examples/car.json',import.meta.url),'utf8'));
+  original.objects.push(...Array.from({length:2},(_,i)=>({...body,id:'spare-'+i,position:[1000+i*200,0,50]})));
+  const tools=original.objects.filter(o=>o.groupId==='wheels').map((o,i)=>({...o,id:'temporary-cut-'+i,name:'Vano ruota',hole:true,groupId:null,dimensions:{radius:32,height:40}}));
+  return {original,tools,creates:tools.map(object=>({op:'create',object}))};
+}
+test('Quattro utensili temporanei in una scena affollata sono consumati da subtract senza contare pieni estranei',async t=>{
+  const {original,tools,creates}=await crowdedCar(),snapshot=structuredClone(original);
+  assert.equal(original.objects.filter(o=>o.groupId===null).length*tools.length,36);
+  const response={message:'Scavo quattro passaruota solo nella carrozzeria.',operations:[...creates,{op:'subtract',ids:['chassis'],toolIds:tools.map(o=>o.id)}]};
+  t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(response)}}]})));
+  const parsed=await interpretDeepSeek('Scava quattro passaruota',original,'chassis',{key:'test-key'});
+  const updated=applyOperations(original,{operations:parsed.operations});
+  assert.equal(updated.objects.find(o=>o.id==='chassis').type,'mesh');assert.equal(updated.objects.filter(o=>o.hole).length,0);
+  for(const object of original.objects.filter(o=>o.id!=='chassis'))assert.deepEqual(updated.objects.find(o=>o.id===object.id),object);
+  assert.ok(volume(exportSTL(updated))<volume(exportSTL(original))-1000);
+  assert.deepEqual(decodeProject(encodeProject(updated)),updated);
+  const history=new History(original);history.commit(updated);assert.deepEqual(history.undo(),original);assert.deepEqual(history.redo(),updated);
+  assert.deepEqual(original,snapshot);
+});
+test('Fori creati prima di raggrupparli sono validati sui gruppi finali del batch',async()=>{
+  const {original,tools,creates}=await crowdedCar();
+  const updated=applyOperations(original,{operations:[...creates,{op:'group',id:'isolated-body',name:'Pezzo con utensili',ids:['chassis',...tools.map(o=>o.id)]}]});
+  assert.equal(updated.objects.filter(o=>o.hole).length,4);
+  assert.equal(updated.objects.find(o=>o.id==='chassis').groupId,'isolated-body');
+  assert.ok(volume(exportSTL(updated))<volume(exportSTL(original))-1000);
+});
+test('I limiti finali per fori modificabili e quelli reali di subtract restano obbligatori e atomici',async()=>{
+  const {original,creates}=await crowdedCar(),snapshot=structuredClone(original);
+  assert.throws(()=>applyOperations(original,{operations:creates}),/Troppe sottrazioni.*32/);
+  const solids=Array.from({length:9},(_,i)=>({...body,id:'body-'+i}));
+  const tools=Array.from({length:4},(_,i)=>({...tool,id:'tool-'+i}));
+  assert.throws(()=>applyOperations(state(solids),{operations:[...tools.map(object=>({op:'create',object})),{op:'subtract',ids:solids.map(o=>o.id),toolIds:tools.map(o=>o.id)}]}),/^Error: Sottrazione: massimo 8 forme foro e 32 coppie/);
+  assert.throws(()=>applyOperations(original,{operations:[{op:'update',id:'chassis',changes:{dimensions:{x:-1,y:100,z:100}}},{op:'update',id:'chassis',changes:{dimensions:{x:100,y:100,z:100}}}]}),/Numero fuori limite/);
+  assert.deepEqual(original,snapshot);
+});

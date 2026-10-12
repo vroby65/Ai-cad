@@ -1,11 +1,11 @@
 # Verification report
 
-Checked on 11 October 2026 using Node.js 24.21.0 on Linux. The active app requires
+Checked on 12 October 2026 using Node.js 24.21.0 on Linux. The active app requires
 no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**83 tests passed** with npm test. The suite covers:
+**86 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -23,6 +23,10 @@ no PHP. Tests do not use real keys or paid API requests.
 - Baked subtract results retain IDs/metadata, consume tools and persist without
   helpers in JSON/STL. Side cuts recenter without moving remaining material;
   further mesh cuts and failed/no-effect batches are covered.
+- Temporary tools in a crowded scene can be consumed by subtract or isolated by
+  grouping in the same batch, despite exceeding preview pairs at an intermediate
+  step. Final editable-hole limits and actual subtract pair limits remain enforced;
+  malformed intermediate dimensions remain rejected and inputs stay unchanged.
 - Imported JSON containing meshes and editable holes: actual removed volume,
   empty raycast, geometry cache refresh on tool movement and undo/redo.
 - Imported STL with editable tools, resizing/rotation, group isolation, mesh pair
@@ -67,6 +71,12 @@ native file dialogs and downloads have not been clicked by an automated browser.
   all four wheels. A ray at the arch met the body 20.33 mm farther inside after the
   cut. Corrected JSON/STL copies were written outside the repository without
   overwriting the original. User files are not included in the publication.
+- The reported four-tool create/subtract failure was reproduced by regression tests:
+  intermediate preview validation counted 36 unrelated/full-tool pairs, although
+  explicit subtract needed only four. With final preview validation, the same batch
+  succeeds and preserves wheels/other parts. A synthetic scene using the reported
+  body/tool dimensions and coordinates confirmed real removal: the ray at an arch
+  reaches Y=-40.65 mm after cutting, versus Y=-70 mm before. JSON/STL exports passed.
 - Unauthenticated official chat POST and balance GET CORS preflights succeeded
   for localhost and the intended HTTPS GitHub Pages origin, returning HTTP 200
   and the matching allowed origin/method/headers. These checks verify CORS only,

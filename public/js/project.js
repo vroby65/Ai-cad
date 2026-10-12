@@ -45,7 +45,7 @@ function object(value) {
   if(value.groupId!==null) id(value.groupId);
   if(value.type==='mesh') meshVertices(value);
 }
-export function validateProject(state) {
+function validateState(state) {
   fields(state,['version','name','units','objects','groups']);
   if(state.version!==1 || state.units!=='mm') throw new Error('Versione o unità non supportata.');
   text(state.name,100);
@@ -62,9 +62,14 @@ export function validateProject(state) {
   for(const group of groups) if(!state.objects.some(o=>o.groupId===group)) throw new Error('Gruppo vuoto.');
   const holes=state.objects.filter(o=>o.hole===true);
   if(holes.length>MAX_HOLES) throw new Error('Massimo 8 forme foro per progetto.');
+  if(new TextEncoder().encode(JSON.stringify(state)).byteLength>MAX_PROJECT_BYTES) throw new Error('Progetto troppo grande (massimo 8 MiB).');
+  return state;
+}
+export function validateProject(state) {
+  validateState(state);
+  const holes=state.objects.filter(o=>o.hole===true);
   const pairs=holes.reduce((count,hole)=>count+state.objects.filter(o=>o.hole!==true && o.groupId===hole.groupId).length,0);
   if(pairs>MAX_BOOLEAN_PAIRS) throw new Error('Troppe sottrazioni: massimo 32 coppie pieno/foro. Usa gruppi per isolare i pezzi.');
-  if(new TextEncoder().encode(JSON.stringify(state)).byteLength>MAX_PROJECT_BYTES) throw new Error('Progetto troppo grande (massimo 8 MiB).');
   return state;
 }
 export function newId(state,prefix) {
@@ -144,7 +149,8 @@ export function applyOperations(state,batch) {
         prune(next); break;
       default: throw new Error(`Operazione non autorizzata: ${op.op}.`);
     }
-    validateProject(next);
+    validateState(next);
   }
-  return next;
+  // Temporary tools may be consumed or grouped before this state is rendered.
+  return validateProject(next);
 }

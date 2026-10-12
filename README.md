@@ -118,6 +118,9 @@ Moving, rotating or resizing a tool updates the real cut. Disabling or deleting
 it restores material. JSON preserves original shapes and tools for recalculation.
 
 Limits: **8 tools**, **32 solid/tool pairs**, **20000 triangles per cut result**.
+For explicit subtract, pairs count only its specified targets and tools. Temporary
+tools created and consumed in the same atomic command do not count against unrelated
+scene objects. The editable-hole pair limit applies to the completed project.
 STL must represent a closed solid, not a plane. Topology is not exhaustively
 checked. BSP subtraction uses triangulated surfaces and does not guarantee
 manifold output, printability or mechanical precision. Solids are not fused.

@@ -43,7 +43,12 @@ The chat separator supports pointer capture and keyboard, adapts to available
 viewport space and exposes ARIA values. Its height is not persisted.
 
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
-Batches apply to a copy and remain atomic. Groups are flat. Mesh vertices come
+Batches apply to a copy and remain atomic. Check schemas/references/object/tool/size
+bounds after each operation; check editable-hole pairs on the completed batch.
+Temporary tools may be consumed or grouped before rendering. Each subtract must
+check its actual expanded target/tool pairs before CSG; unrelated solids do not count.
+Final projects/imports must still satisfy the editable-hole pair limit.
+Groups are flat. Mesh vertices come
 only from valid file imports or locally calculated subtraction, never from the AI.
 DeepSeek sees compact mesh data with triangleCount, not vertices. Send bounded
 session conversation before the final command/state: at most forty alternating

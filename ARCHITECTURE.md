@@ -35,7 +35,10 @@ Authorization header, never in the prompt, snapshots or exported files.
 
 The response is untrusted. parseEnvelope requires a complete stop response, JSON
 with exact message/operations fields, a bounded explanation and allowed operations.
-applyOperations works on a copy and validates the project after each operation.
+applyOperations works on a copy and validates schemas, references and resource bounds
+after each operation. Editable-hole pair limits are checked on the completed batch,
+so temporary tools can be consumed by subtract or isolated by grouping before preview.
+Each subtract independently checks its actual target/tool pair count before CSG.
 Errors reject the whole batch. Only a prepared, valid result is committed.
 
 message.content is exposed to the chat before schema validation, so malformed or
