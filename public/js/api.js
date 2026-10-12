@@ -54,7 +54,9 @@ Se mancano misure scegli valori ragionevoli e spiegali in message; per richieste
 
 export function parseEnvelope(response,state) {
   const choice=Array.isArray(response?.choices)?response.choices[0]:null;
+  if(choice?.finish_reason==='length') throw new Error('Risposta DeepSeek troncata: limite di token raggiunto. Dividi il progetto in più comandi.');
   if(!choice || choice.finish_reason!=='stop' || typeof choice.message?.content!=='string') throw new Error('Risposta DeepSeek incompleta o non valida. Riprova con un comando più semplice.');
+  if(!choice.message.content.trim()) throw new Error('DeepSeek ha restituito una risposta vuota. Riprova il comando.');
   let batch;
   if(new TextEncoder().encode(choice.message.content).byteLength>MAX_AI_BYTES) throw new Error('Risposta DeepSeek troppo grande.');
   try { batch=JSON.parse(choice.message.content); } catch { throw new Error('DeepSeek ha restituito JSON non valido.'); }
@@ -89,7 +91,7 @@ function conversationMessages(messages) {
   }
   return recent;
 }
-export async function interpretDeepSeek(prompt,state,selectedId,{key,onOutput,messages=[]}) {
+export async function interpretDeepSeek(prompt,state,selectedId,{key,onOutput,onDiagnostic,messages=[]}) {
   validateProject(state);
   if(typeof prompt!=='string' || !prompt.trim() || Array.from(prompt).length>2000) throw new Error('Il comando deve contenere da 1 a 2000 caratteri.');
   if(selectedId!==null && !state.objects.some(o=>o.id===selectedId)) throw new Error('Selezione inesistente.');
@@ -99,23 +101,32 @@ export async function interpretDeepSeek(prompt,state,selectedId,{key,onOutput,me
     if(o.type!=='mesh') return o;
     const {vertices,...compact}=o; return {...compact,triangleCount:vertices.length/9};
   })};
-  const payload={model:'deepseek-flash',messages:[{role:'system',content:contract},...conversationMessages(messages),{role:'user',content:JSON.stringify({command:prompt,selectedId,project})}],response_format:{type:'json_object'},max_tokens:8192,stream:false};
+  const payload={model:'deepseek-flash',thinking:{type:'disabled'},messages:[{role:'system',content:contract},...conversationMessages(messages),{role:'user',content:JSON.stringify({command:prompt,selectedId,project})}],response_format:{type:'json_object'},max_tokens:8192,stream:false};
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),60000);
+  const started=performance.now();let phase='network';
+  const report=(stage,data)=>onDiagnostic?.(stage,{elapsedMs:Math.round(performance.now()-started),...data});
   try {
+    report('request',{model:payload.model,thinking:payload.thinking.type,maxTokens:payload.max_tokens,messages:payload.messages.length,requestBytes:new TextEncoder().encode(JSON.stringify(payload)).byteLength});
     const response=await fetch('https://api.deepseek.com/chat/completions',{
       method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key.trim()}`},body:JSON.stringify(payload),signal:controller.signal,credentials:'omit',referrerPolicy:'no-referrer',redirect:'error'
     });
+    phase='http';report('http',{status:response.status});
     if(!response.ok) {
-      const errors={401:'chiave API non valida',403:'accesso negato',402:'credito insufficiente',429:'troppe richieste; attendi e riprova'};
+      const errors={400:'parametri della richiesta non accettati',401:'chiave API non valida',403:'accesso negato',402:'credito insufficiente',422:'parametri della richiesta non validi',429:'troppe richieste; attendi e riprova'};
       throw new Error(`DeepSeek: ${errors[response.status]||'servizio non disponibile'} (HTTP ${response.status}).`);
     }
+    phase='body';
     const envelope=await readResponse(response);
     const content=envelope?.choices?.[0]?.message?.content;
+    phase='validation';
+    report('response',{finishReason:envelope?.choices?.[0]?.finish_reason??null,contentChars:typeof content==='string'?content.length:0,promptTokens:envelope?.usage?.prompt_tokens??null,completionTokens:envelope?.usage?.completion_tokens??null,reasoningTokens:envelope?.usage?.completion_tokens_details?.reasoning_tokens??null});
     if(typeof content==='string') onOutput?.(content);
-    return parseEnvelope(envelope,state);
+    const batch=parseEnvelope(envelope,state);
+    report('validated',{operations:batch.operations.length});return batch;
   } catch(error) {
-    if(error.name==='AbortError') throw new Error('DeepSeek non ha risposto entro 60 secondi.');
-    if(error instanceof TypeError) throw new Error('Connessione a DeepSeek non riuscita. Controlla rete e accesso CORS dal browser.');
+    if(error.name==='AbortError') error=new Error('DeepSeek non ha risposto entro 60 secondi.');
+    else if(error instanceof TypeError && ['network','body'].includes(phase)) error=new Error('Connessione a DeepSeek non riuscita. Controlla rete e accesso CORS dal browser.');
+    report('error',{phase,message:error.message});
     throw error;
   } finally { clearTimeout(timeout); controller.abort(); }
 }

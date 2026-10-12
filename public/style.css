@@ -557,6 +557,19 @@ textarea::placeholder {
 .chat-resizer:hover::after,.chat-resizer:focus-visible::after {
   background:var(--accent)
 }
+.diagnostics {
+  flex:0 1 auto;
+  min-height:24px;
+  max-height:45%;
+  overflow:auto;
+  padding:5px 14px;
+  border-bottom:1px solid var(--line);
+  font-size:11px
+}
+.diagnostics summary { cursor:pointer; color:var(--muted) }
+.diagnostics>div { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin:6px 0 }
+.diagnostics small { color:var(--muted) }
+.diagnostics pre { max-height:90px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; margin:0; font-size:10px }
 .chat-heading {
   display:flex;
   justify-content:space-between;

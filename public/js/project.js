@@ -7,7 +7,8 @@ import { validateModifiers } from './deform.js';
 export function fields(value,required,optional=[]) {
   if(!value || typeof value!=='object' || Array.isArray(value) || Object.getPrototypeOf(value)!==Object.prototype) throw new Error('Atteso un oggetto JSON.');
   const keys=Object.keys(value); const allowed=new Set([...required,...optional]);
-  if(required.some(k=>!Object.hasOwn(value,k)) || keys.some(k=>!allowed.has(k))) throw new Error('Campi mancanti o non autorizzati.');
+  const missing=required.filter(k=>!Object.hasOwn(value,k)),extra=keys.filter(k=>!allowed.has(k));
+  if(missing.length || extra.length) throw new Error('Campi mancanti o non autorizzati.'+(missing.length ? ' Mancanti: '+missing.join(', ')+'.' : '')+(extra.length ? ' Non consentiti: '+extra.slice(0,10).map(k=>k.slice(0,64)).join(', ')+'.' : ''));
 }
 function text(value,max) {
   if(typeof value!=='string' || !value.trim() || Array.from(value).length>max || /[\x00-\x1f\x7f]/.test(value)) throw new Error('Testo non valido o troppo lungo.');
@@ -120,7 +121,8 @@ export function applyOperations(state,batch) {
   validateProject(state); fields(batch,['operations']);
   if(!Array.isArray(batch.operations) || batch.operations.length>MAX_OPERATIONS) throw new Error('Massimo 100 operazioni per comando.');
   const next=structuredClone(state);
-  for(const op of batch.operations) {
+  for(const [index,op] of batch.operations.entries()) {
+    try {
     if(!op || typeof op.op!=='string') throw new Error('Operazione non valida.');
     switch(op.op) {
       case 'create':
@@ -181,6 +183,11 @@ export function applyOperations(state,batch) {
       default: throw new Error(`Operazione non autorizzata: ${op.op}.`);
     }
     validateState(next);
+    } catch(error) {
+      const label=typeof op?.op==='string'?op.op.slice(0,64):'sconosciuta';
+      const target=op?.id??op?.object?.id;
+      throw new Error(`Operazione ${index+1} (${label}${typeof target==='string'?' · '+target.slice(0,64):''}): ${error.message}`,{cause:error});
+    }
   }
   // Temporary tools may be linked, consumed or grouped before rendering.
   return validateProject(next);

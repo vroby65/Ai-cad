@@ -129,7 +129,7 @@ test('I limiti finali per fori modificabili e quelli reali di subtract restano o
   assert.throws(()=>applyOperations(original,{operations:creates}),/Troppe sottrazioni.*32/);
   const solids=Array.from({length:9},(_,i)=>({...body,id:'body-'+i}));
   const tools=Array.from({length:4},(_,i)=>({...tool,id:'tool-'+i}));
-  assert.throws(()=>applyOperations(state(solids),{operations:[...tools.map(object=>({op:'create',object})),{op:'subtract',ids:solids.map(o=>o.id),toolIds:tools.map(o=>o.id)}]}),/^Error: Sottrazione: massimo 8 forme foro e 32 coppie/);
+  assert.throws(()=>applyOperations(state(solids),{operations:[...tools.map(object=>({op:'create',object})),{op:'subtract',ids:solids.map(o=>o.id),toolIds:tools.map(o=>o.id)}]}),/^Error: Operazione 5 \(subtract\): Sottrazione: massimo 8 forme foro e 32 coppie/);
   assert.throws(()=>applyOperations(original,{operations:[{op:'update',id:'chassis',changes:{dimensions:{x:-1,y:100,z:100}}},{op:'update',id:'chassis',changes:{dimensions:{x:100,y:100,z:100}}}]}),/Numero fuori limite/);
   assert.deepEqual(original,snapshot);
 });

@@ -18,7 +18,11 @@ export function disposeMesh(mesh) { mesh.geometry.dispose(); mesh.material.dispo
 function prepareChanges(project,meshes) {
   const prepared=new Map();
   try {
-    for(const object of project.objects) if(meshes.get(object.id)?.userData.geometry!==geometrySignature(object,project)) prepared.set(object.id,evaluatedGeometry(object,project));
+    for(const object of project.objects) {
+      try {
+        if(meshes.get(object.id)?.userData.geometry!==geometrySignature(object,project)) prepared.set(object.id,evaluatedGeometry(object,project));
+      } catch(error) { throw new Error(`Geometria ${object.name} (${object.id}): ${error.message}`,{cause:error}); }
+    }
     return prepared;
   } catch(error) { prepared.forEach(geometry=>geometry.dispose()); throw error; }
 }

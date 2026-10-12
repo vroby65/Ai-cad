@@ -28,6 +28,8 @@ test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   for(const path of ['/','/js/app.js','/js/chat.js','/js/properties.js','/js/boolean.js','/js/geometry.js','/js/profiles.js','/js/deform.js','/js/project.js','/js/api.js','/js/account.js','/js/import.js','/vendor/csg-lib.js','/vendor/three.module.js','/vendor/three.core.js','/vendor/OrbitControls.js','/vendor/STLExporter.js','/vendor/STLLoader.js']) assert.equal((await fetch(base+path)).status,200);
   assert.match(html,/<form id="property-form"><fieldset id="property-fields">/);
   assert.match(html,/id="property-error"[^>]*aria-live="polite"/);
+  for(const id of ['diagnostics','diagnostic-output','download-log','clear-log'])assert.ok(html.includes(`id="${id}"`));
+  assert.equal((await fetch(base+'/js/diagnostics.js')).status,200);
 });
 test('Solo file pubblici: backend ritirato, chiavi e sorgenti privati non esposti',async()=>{
   for(const path of ['/api.php','/.env','/.git/config','/legacy/api.php','/legacy/src/Config.php','/%2e%2e/legacy/api.php']) assert.equal((await fetch(base+path)).status,404);

@@ -5,7 +5,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**121 tests passed** with npm test. The suite covers:
+**127 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -59,6 +59,13 @@ no PHP. Tests do not use real keys or paid API requests.
 - Mock DeepSeek: official URL/fixed Flash/JSON mode, key only in Authorization,
   compact mesh context, explanations, raw rejected/truncated output, HTTP/network
   errors, timeout and bounded streamed responses.
+- Explicit non-thinking Flash requests; distinct truncated/empty responses; HTTP
+  400 classification, usage/finish/phase diagnostics and preservation of local
+  TypeErrors. Numbered operation/target and geometry object errors are checked.
+- Diagnostic redaction of keys/headers/vertices/reasoning, bounded immutable events,
+  clear and download. Actual app event handlers with simulated DOM/fetch capture a
+  rejected generation without modifying the model, download safe logs, then apply
+  the next successful command and preserve the account when logs are cleared.
 - Simulated DOM chat: safe text, bubbles, detailed operations, raw JSON, errors,
   forty-turn cap and reset.
 - Pending chat animation: three status dots without visible waiting text; success
@@ -133,6 +140,13 @@ returned HTTP 404 on Pages. The deployment contains the public directory and lic
 archived PHP and user project files are excluded.
 
 ## Remaining verification
+
+The latest user-reported failed command/response was not provided. The inherited
+provider thinking default was identified and disabled; error misclassification was
+reproduced and fixed. These findings do not prove the precise cause of that user's
+failure. New session logs can identify its HTTP, response, schema or geometry stage.
+Fresh unauthenticated CORS preflights for localhost and Pages returned HTTP 200 with
+matching allowed origins, POST and authorization/content-type headers.
 
 The integrated browser returned “No browser is available”; connected browser
 discovery was empty. Real Firefox/WebGL, layout, selection, touch/pointer capture,

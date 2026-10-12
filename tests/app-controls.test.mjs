@@ -21,7 +21,7 @@ let instance=0;
 async function setup(t){
   const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
   const storage=new Map([['deepcad.deepseek-key','fake-test-key'],['unrelated','keep']]),requests=[];
-  const env={get,storage,requests,confirmations:0,accept:true,hold:false};let release;
+  const env={get,storage,requests,confirmations:0,accept:true,hold:false,reply:response};let release;
   const window=new EventTarget();
   t.after(async()=>{if(release){release();await env.idle();}window.dispatchEvent(new Event('pagehide'));});
   const globals={document:{getElementById:get,createElement:()=>new Element(),querySelectorAll:()=>[]},window,ResizeObserver:class{observe(){}},matchMedia:()=>({matches:false}),localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},confirm:()=>{env.confirmations++;return env.accept;}};
@@ -32,8 +32,8 @@ async function setup(t){
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     if(url.endsWith('/user/balance'))return new Response(JSON.stringify({is_available:true,balance_infos:[{currency:'USD',total_balance:'1.00'}]}));
     requests.push(JSON.parse(options.body));
-    if(env.hold)return new Promise(resolve=>{release=()=>resolve(response());});
-    return response();
+    if(env.hold)return new Promise(resolve=>{release=()=>resolve(env.reply());});
+    return env.reply();
   });
   // Execute the actual app; only the WebGL view is replaced for headless testing.
   const view='data:text/javascript;base64,'+Buffer.from('export class CadView { prepare(){} sync(){} select(){} frame(){} }').toString('base64');
@@ -66,4 +66,20 @@ test('Nuovo non cancella una richiesta in corso; un progetto vuoto si apre senza
   env.hold=true;get('prompt').value='Crea un cubo';env.submit();assert.equal(get('new').disabled,true);
   get('new').click();assert.equal(env.confirmations,0);assert.equal(get('chat-messages').children[0].className,'chat-turn');
   env.release();await env.idle();assert.equal(get('new').disabled,false);assert.equal(get('object-count').textContent,'1');
+});
+
+test('Un comando fallito lascia log leggibili e scaricabili senza chiave; il successivo riesce',async t=>{
+  const env=await setup(t),{get}=env;
+  env.reply=()=>new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"operations":[',reasoning_content:'private-reasoning'}}],usage:{completion_tokens:8192}}));
+  get('prompt').value='Crea un cubo';env.submit();await env.idle();
+  assert.equal(get('object-count').textContent,'0');assert.equal(get('diagnostics').open,true);
+  const raw=get('diagnostic-output').textContent,log=JSON.parse(raw);
+  assert.ok(log.entries.some(e=>e.stage==='response'&&e.data.finishReason==='length'));
+  assert.match(raw,/troncata/);assert.doesNotMatch(raw,/fake-test-key|private-reasoning/);
+  let download;t.mock.method(URL,'createObjectURL',blob=>{download=blob;return 'blob:test';});get('download-log').click();
+  assert.deepEqual(JSON.parse(await download.text()),log);
+  env.reply=response;env.submit();await env.idle();assert.equal(get('object-count').textContent,'1');
+  assert.ok(JSON.parse(get('diagnostic-output').textContent).entries.some(e=>e.stage==='applied'));
+  get('clear-log').click();assert.equal(JSON.parse(get('diagnostic-output').textContent).entries.length,0);
+  assert.equal(get('deepseek-key').value,'fake-test-key');
 });

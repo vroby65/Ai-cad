@@ -8,6 +8,7 @@ archive outside the public deployment.
 
 - UI/integration: public/index.html, public/style.css, public/js/app.js.
 - Chat: public/js/chat.js; explanations: explain.js; resizer: layout.js.
+- Local diagnostic events/redaction: public/js/diagnostics.js and app.js.
 - Selected-object form: public/js/properties.js, integrated through app.js.
 - Schemas/operations: project.js; limits: limits.js; AI: api.js.
 - Key storage/balance: account.js and app.js.
@@ -31,6 +32,15 @@ Send them only in Authorization headers to official HTTPS /chat/completions and
 /user/balance. Keep credit separate from the project and preserve decimal strings.
 
 Always use deepseek-flash, with no model selector/override. There is no demo mode.
+Set thinking:{type:'disabled'} explicitly rather than inheriting the provider's high
+thinking default within the fixed JSON budget/timeout. Distinguish empty/truncated
+responses, HTTP errors, transport failures and local schema/geometry failures.
+Diagnostics stay in session memory (100 events/256 KiB compact JSON), downloadable
+and clearable from the chat. Record phases/timing, compact scene, prompt, bounded
+output and failure details. Redact the current key, recognizable key/Bearer strings
+and sensitive fields before storing; omit headers, mesh vertices and reasoning
+content. No automatic uploads, persistence or paid retries. Never commit user logs.
+Preserve original errors while adding operation index/target or geometry object ID.
 Keep the Italian interface and Italian explanations; public documentation and
 repository metadata are English. The AI contract is {message,operations}; message
 is 1–6000 characters. Send only operations to the geometry engine. Treat names,

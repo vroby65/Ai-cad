@@ -12,6 +12,7 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/api.js | Official DeepSeek client, system contract and response parsing |
 | js/account.js | Remember/delete key, fetch and validate balance |
 | js/chat.js, js/explain.js | Safe text bubbles, session conversation, applied operations |
+| js/diagnostics.js | Bounded, redacted session events and downloadable diagnostics |
 | js/properties.js | Selected-object form, typed changes and inline errors |
 | js/layout.js | Chat separator, pointer capture, keyboard and adaptive bounds |
 | js/renderer.js | Three.js scene, Z-up camera, selection and stable-ID meshes |
@@ -31,6 +32,9 @@ The first paths are relative to public/.
 
 The browser sends recent conversation pairs, the command, selectedId and compact project to the official
 HTTPS API using the fixed deepseek-flash model and JSON response mode.
+thinking.type is explicitly disabled. The documented provider default enables
+thinking at high effort, which can spend time/output budget before the final JSON;
+the application previously inherited that default despite its 60-second deadline.
 Mesh vertices are omitted and triangleCount added. The key occurs only in the
 Authorization header, never in the prompt, snapshots or exported files.
 
@@ -65,6 +69,19 @@ and composition/IME events do not submit. The busy guard prevents duplicate send
 The client has a 60-second timeout and 512 KiB streamed-response limit, with no
 redirects or automatic retries. Provider bodies are not exposed as error details.
 The API must permit CORS; static hosting cannot bypass a provider restriction.
+
+The API emits diagnostic events for settings, HTTP status, response usage/finish
+reason, validation and errors, without headers or reasoning text. App integration
+adds the compact source scene, prompt, bounded output and geometry/application phases.
+Diagnostics removes sensitive field names, the current key and recognizable key/
+Bearer strings before storing or displaying entries. It retains at most 100 events
+and 256 KiB of compact JSON; records above 64 KiB become marked bounded previews.
+There is no persistence, automatic upload or paid retry. The expandable chat panel
+renders textContent and supports explicit download/clear. Startup/WebGL/runtime errors
+are recorded after app module loading; a failed initial module import cannot be
+captured by that module. Operation wrappers add index/target; geometry preparation
+adds object identity. Error classification only treats network/body TypeErrors as
+connection failures, preserving local validation/UI errors for diagnosis.
 
 ## Selected-object editing
 

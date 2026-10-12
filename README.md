@@ -54,6 +54,8 @@ directly below this compact header.
 The fixed model is **deepseek-flash**, documented by the
 [official DeepSeek API](https://api-docs.deepseek.com/). There is no model selector
 or demo mode. Natural-language commands require your own API credit.
+Requests explicitly disable thinking mode to reserve the generation budget for the
+CAD JSON response. The model remains Flash, with no additional interface setting.
 
 At the user's request, the key is remembered in this browser's localStorage
 under `deepcad.deepseek-key`. Clearing the field also deletes it. If storage is
@@ -234,6 +236,22 @@ intended Pages origin; this does not verify a paid/authenticated request.
 Users enter their own keys in the browser.
 
 ## Tests and maintenance
+
+If a command produces nothing, expand **Diagnostica** above the chat. The panel opens
+on command errors. **Scarica log** downloads `deepcad-diagnostics.json`; **Cancella log**
+clears only the diagnostic history. Logs record the command, compact source scene,
+request settings, HTTP status, elapsed time, token counts, finish reason, bounded
+raw output and the failing validation/geometry phase. Operation errors include their
+number and target ID; geometry errors identify the object. Empty and token-truncated
+responses have distinct messages, and local JavaScript errors are not labeled as
+network failures.
+
+Logs stay in memory in the current tab, with no automatic upload or disk storage.
+Download them before reloading. They include project names, commands and model output;
+API keys, Authorization headers, source mesh vertices and reasoning content are
+excluded/redacted. The buffer retains at most 100 events within 256 KiB of compact
+JSON; oversized records are marked as truncated previews. Log files do not belong
+in the public repository. Failed commands leave the editable project unchanged.
 
 Node.js 20.6+, without installing packages or using a real key:
 

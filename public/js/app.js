@@ -9,8 +9,18 @@ import { decodeProject, encodeProject, download, filename, MAX_FILE_BYTES } from
 import { ChatView } from './chat.js';
 import { setupChatResize } from './layout.js';
 import { PropertyEditor } from './properties.js';
+import { Diagnostics } from './diagnostics.js';
 
 const $=id=>document.getElementById(id);
+const diagnostics=new Diagnostics(()=>$('deepseek-key').value,()=>{
+  $('diagnostic-output').textContent=diagnostics.export();
+  $('diagnostic-count').textContent=String(diagnostics.entries.length);
+});
+$('download-log').addEventListener('click',()=>download(diagnostics.export(),'deepcad-diagnostics.json','application/json'));
+$('clear-log').addEventListener('click',()=>diagnostics.clear());
+window.addEventListener('error',event=>{diagnostics.record('runtime-error',{message:event.message,line:event.lineno});$('diagnostics').open=true;});
+window.addEventListener('unhandledrejection',event=>{diagnostics.record('runtime-error',{message:event.reason?.message||String(event.reason)});$('diagnostics').open=true;});
+diagnostics.record('startup',{build:'diagnostics-1',model:'deepseek-flash',thinking:'disabled'});
 $('deepseek-key').value=readKey();
 const history=new History(emptyProject());
 const chat=new ChatView($('chat-messages'));
@@ -20,7 +30,10 @@ const propertyEditor=new PropertyEditor($('property-form'),$('property-fields'),
   commit(applyOperations(history.current,{operations:[operation]}));
   message('Valori dell’oggetto aggiornati.');
 });
-function message(text,error=false) { $('status').textContent=text; $('status').className=error ? 'error' : busy ? 'busy' : ''; }
+function message(text,error=false) {
+  $('status').textContent=text; $('status').className=error ? 'error' : busy ? 'busy' : '';
+  if(error) diagnostics.record('ui-error',{message:text});
+}
 function setBusy(value) {
   busy=value;
   propertyEditor.setBusy(value);
@@ -75,23 +88,32 @@ async function execute() {
   const before=history.current;
   const messages=chat.messages();
   const turn=chat.start(prompt);
+  const started=performance.now();let phase='interpret';
+  diagnostics.record('command',{prompt,selectedId,project:{...before,objects:before.objects.map(({vertices,...object})=>({...object,...(vertices?{triangleCount:vertices.length/9}:{})}))}});
   setBusy(true); message('');
   try {
     const modelJson=await interpretDeepSeek(prompt,before,selectedId,{
       key:$('deepseek-key').value,
       messages,
-      onOutput:content=>chat.output(turn,content)
+      onDiagnostic:(stage,data)=>diagnostics.record(stage,data),
+      onOutput:content=>{diagnostics.record('output',{content});chat.output(turn,content);}
     });
+    phase='operations';
     const updated=applyOperations(before,{operations:modelJson.operations});
     if(modelJson.operations.length) {
+      phase='geometry';diagnostics.record('geometry',{objects:updated.objects.length});
       commit(updated);
       if(!before.objects.length) view.frame();
     }
+    phase='chat';
     const summary=modelJson.operations.length ? `${modelJson.operations.length} operazioni applicate · ${updated.objects.length} oggetti nella scena` : 'Nessuna operazione: prova a descrivere una forma o una trasformazione.';
     chat.complete(turn,modelJson,summary);
     if($('prompt').value.trim()===prompt) $('prompt').value='';
     message(summary);
+    diagnostics.record('applied',{operations:modelJson.operations.length,objects:updated.objects.length,elapsedMs:Math.round(performance.now()-started)});
   } catch(error) {
+    diagnostics.record('failed',{phase,message:error.message,elapsedMs:Math.round(performance.now()-started)});
+    $('diagnostics').open=true;
     chat.fail(turn,error.message);
     message(error.message,true);
   }
@@ -134,6 +156,8 @@ async function refreshBalance() {
 }
 try { view=new CadView($('viewport'),select); render(); }
 catch(error) {
+  diagnostics.record('webgl-error',{message:error.message});
+  $('diagnostics').open=true;
   message('Visualizzatore non disponibile: attiva WebGL nel browser e ricarica la pagina.',true);
   $('run').disabled=true; throw error;
 }

@@ -256,7 +256,7 @@ The archived PHP backend does not support mesh/hole/subtract extensions.
 
 Official POST https://api.deepseek.com/chat/completions, Authorization Bearer and
 Content-Type application/json. Model is always deepseek-flash. Payload fields:
-model, messages (system, prior user/assistant pairs, current user), response_format:{"type":"json_object"}, max_tokens:8192,
+model, thinking:{"type":"disabled"}, messages (system, prior user/assistant pairs, current user), response_format:{"type":"json_object"}, max_tokens:8192,
 stream:false. No PHP endpoint, application proxy or selectable model.
 
 The final user message is serialized JSON containing command, selectedId and project.
@@ -280,6 +280,10 @@ objects it edits existing modifier axes/angles/factors. Point/modifier counts
 are changed through chat operations. Geometry failures leave the scene unchanged.
 
 A complete choices[0].finish_reason:"stop" and string message.content are required.
+Thinking is explicitly disabled; the provider's default is enabled, as documented
+in [Thinking Mode](https://api-docs.deepseek.com/guides/thinking_mode/).
+finish_reason:"length" and empty content are rejected with distinct errors. Diagnostic
+events include finish reason and token usage, but never reasoning_content or headers.
 The raw content reaches the chat before validation; invalid/truncated content is
 kept as safe text, with no changes applied. The explanation is displayed only
 after successful execution. Forty exchanges remain in the current session.
