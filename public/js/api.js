@@ -9,7 +9,7 @@ ID univoci e stabili: lettera ASCII iniziale, poi lettere/cifre/_/-, massimo 64 
 rotation [X,Y,Z] in gradi Euler locali XYZ, limiti ±36000. Cilindri e coni sono verticali su Z, la punta del cono è +Z.
 Oggetto primitivo (campi tutti obbligatori): {id,type,name,dimensions,position,rotation,color,groupId:null}.
 Campo opzionale sulle primitive: hole, booleano; assente o false = pieno, hole:true = forma FORO con sottrazione reale, come in Tinkercad.
-SCAVI E SOTTRAZIONI BOOLEANE SONO DISPONIBILI: crea cilindri, box, sfere o coni con hole:true per rimuovere materiale. Non simulare fori con forme nere.
+SCAVI E SOTTRAZIONI BOOLEANE SONO DISPONIBILI: crea cilindri, box, sfere, coni, tori o forme a profilo con hole:true per rimuovere materiale. Non simulare fori con forme nere.
 Per richieste 'scava', 'togli materiale', 'sottrai' o 'crea un foro' usa create delle forme foro seguito da subtract: rimuove davvero materiale nella vista 3D e nello STL e conserva i fori MODIFICABILI.
 subtract funziona su primitive e STL chiusi. Indica esplicitamente in ids SOLO i solidi da scavare e in toolIds le forme foro; i gruppi non limitano questa operazione. Le ruote e gli altri oggetti esclusi da ids rimangono intatti.
 Di default subtract conserva solidi originali e utensili, senza cambiare ID, tipo, nome, colore o gruppi. Il motore registra targetIds sugli utensili: sono gli ID pieni realmente collegati, indipendenti dai gruppi. NON creare né aggiornare targetIds direttamente.
@@ -21,10 +21,18 @@ Per scavare la carrozzeria e conservare le ruote usa subtract con ids contenente
 Per i passaruota considera TUTTI i pieni sovrapposti al vano: tagliare solo i parafanghi lascia la carrozzeria piena dietro il foro. Includi carrozzeria e parafanghi che intersecano gli utensili, preservando le ruote. Se esistono già forme foro corrette, riusale in toolIds senza ricrearle.
 Massimo 8 forme foro e 32 coppie effettive pieno/foro per progetto. La geometria è triangolata, non un kernel CAD di precisione.
 Tipi/dimensioni: box {x,y,z}, sphere {radius}, cylinder/cone {radius,height}; numeri finiti 0.1–10000 mm.
+FORME COMPLESSE DISPONIBILI: torus {radius,tube} (raggio principale e raggio del tubo; tube<radius, radius+tube<=5000); extrude {x,y,z} con profile; lathe {radius,height} con profile (radius<=5000).
+extrude.profile è un contorno 2D semplice, anche concavo, di 3–64 punti [x,y] in mm, ordinati lungo il bordo, senza incroci. Il motore lo centra, lo scala alle dimensioni X/Y ed estrude lungo Z per dimensions.z. Per una carrozzeria usa un profilo laterale sagomato e ruota l'estrusione per darle larghezza.
+lathe.profile è una lista di 2–64 punti [raggio,quotaZ] in mm, Z crescente (quote uguali consentite per spigoli), raggi non negativi, interni positivi; il motore chiude fondo/cima sull'asse e scala a radius/height. Usa rivoluzione per vasi, bottiglie, pedine e forme tornite, con cambi di raggio nel profilo.
+I profili sono coordinate di riferimento: le dimensioni ne scalano gli ingombri, come per una mesh importata. Ogni coordinata è entro ±10000 mm, estensione del profilo non oltre 10000 mm.
+DEFORMAZIONI MODIFICABILI su primitive, profili e STL: modifiers è una lista ordinata di massimo 6 {type:"twist",axis:"x"|"y"|"z",angle:-720..720}, {type:"bend",axis,angle:-180..180}, {type:"taper",axis,factor:0.05..4}. Angoli in gradi; taper scala la sezione da 1 al fattore finale dall'estremo negativo al positivo dell'asse.
+twist torce le sezioni; bend piega ad arco nel piano asse X→Y, Y→Z, Z→X. Una piegatura troppo stretta rispetto allo spessore viene rifiutata: riduci angolo/spessore. Le deformazioni si applicano nell'ordine indicato prima dei fori, conservando base e ID; un comando deform sostituisce la lista completa, [] ripristina la base. Dimensioni = base, non ingombro deformato. Massimo 20000 triangoli e 10000 mm d'ingombro per forma deformata.
+Per richieste di forme sofisticate usa profili, torus e deformazioni, evitando pile di cubi quando non rappresentano la forma richiesta. Per una forma ritorta usa twist; per una curva usa bend; per una rastremata taper. Mantieni pochi punti e modificatori necessari: combinazioni molto dense possono superare 20000 triangoli. Per cavità in un vaso o in una bottiglia tornita aggiungi utensili foro e subtract: lathe da solo chiude il solido, non crea una cavità. Descrivi le scelte e i limiti in message; non promettere raccordi CAD, NURBS o precisione meccanica non implementati.
 Colore #RRGGBB. Nome 1–80 caratteri senza controlli. Massimo 200 oggetti e 200 gruppi.
 Operazioni consentite, campi esatti:
 {op:"create",object:oggettoPrimitivo}
-{op:"update",id,changes:{name?,color?,position?,rotation?,dimensions?,hole?}}: almeno un campo, valori assoluti. hole si modifica solo sulle primitive.
+{op:"update",id,changes:{name?,color?,position?,rotation?,dimensions?,hole?,profile?,modifiers?}}: almeno un campo, valori assoluti. hole si modifica solo sulle primitive; profile solo su extrude/lathe. modifiers anche su mesh.
+{op:"deform",id,modifiers:[...]}: sostituisce la lista di deformazioni mantenendo la base originale; [] le rimuove. create può includere modifiers; extrude/lathe richiedono profile.
 {op:"resize",id,dimensions}: tutte le dimensioni; il centro rimane fermo.
 {op:"translate",ids,delta:[x,y,z]}: somma alla posizione; delta ±100000.
 {op:"rotate",ids,delta:[x,y,z]}: somma agli angoli Euler; delta ±36000; ruota ogni membro sul proprio centro.

@@ -1,0 +1,245 @@
+{
+  "version": 1,
+  "name": "Forme complesse",
+  "units": "mm",
+  "objects": [
+    {
+      "id": "vase",
+      "type": "lathe",
+      "name": "Vaso sagomato",
+      "dimensions": {
+        "radius": 38,
+        "height": 110
+      },
+      "position": [
+        -150,
+        0,
+        55
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#e9ad73",
+      "groupId": null,
+      "profile": [
+        [
+          25,
+          0
+        ],
+        [
+          32,
+          15
+        ],
+        [
+          38,
+          40
+        ],
+        [
+          31,
+          75
+        ],
+        [
+          22,
+          95
+        ],
+        [
+          25,
+          110
+        ]
+      ]
+    },
+    {
+      "id": "vase-hole",
+      "type": "cylinder",
+      "name": "Cavità del vaso",
+      "dimensions": {
+        "radius": 16,
+        "height": 100
+      },
+      "position": [
+        -150,
+        0,
+        72
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null,
+      "hole": true,
+      "targetIds": [
+        "vase"
+      ]
+    },
+    {
+      "id": "tower",
+      "type": "extrude",
+      "name": "Torre ritorta",
+      "dimensions": {
+        "x": 40,
+        "y": 40,
+        "z": 120
+      },
+      "position": [
+        -50,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#62c7a5",
+      "groupId": null,
+      "profile": [
+        [
+          0,
+          10
+        ],
+        [
+          10,
+          0
+        ],
+        [
+          30,
+          0
+        ],
+        [
+          40,
+          10
+        ],
+        [
+          40,
+          30
+        ],
+        [
+          30,
+          40
+        ],
+        [
+          10,
+          40
+        ],
+        [
+          0,
+          30
+        ]
+      ],
+      "modifiers": [
+        {
+          "type": "twist",
+          "axis": "z",
+          "angle": 120
+        },
+        {
+          "type": "taper",
+          "axis": "z",
+          "factor": 0.7
+        }
+      ]
+    },
+    {
+      "id": "arch",
+      "type": "box",
+      "name": "Maniglia curva",
+      "dimensions": {
+        "x": 10,
+        "y": 15,
+        "z": 120
+      },
+      "position": [
+        50,
+        0,
+        60
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#91bff1",
+      "groupId": null,
+      "modifiers": [
+        {
+          "type": "bend",
+          "axis": "z",
+          "angle": 180
+        }
+      ]
+    },
+    {
+      "id": "ring",
+      "type": "torus",
+      "name": "Anello",
+      "dimensions": {
+        "radius": 32,
+        "tube": 10
+      },
+      "position": [
+        160,
+        0,
+        10
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#c88de5",
+      "groupId": null
+    },
+    {
+      "id": "wing",
+      "type": "extrude",
+      "name": "Ala sagomata",
+      "dimensions": {
+        "x": 75,
+        "y": 25,
+        "z": 8
+      },
+      "position": [
+        20,
+        -90,
+        20
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "color": "#f0cd6b",
+      "groupId": null,
+      "profile": [
+        [
+          0,
+          0
+        ],
+        [
+          75,
+          0
+        ],
+        [
+          55,
+          20
+        ],
+        [
+          10,
+          25
+        ]
+      ],
+      "modifiers": [
+        {
+          "type": "twist",
+          "axis": "x",
+          "angle": 20
+        }
+      ]
+    }
+  ],
+  "groups": []
+}

@@ -39,4 +39,12 @@ const carObjects=[
 ];
 for(const [i,p] of [[-70,-63,25],[-70,63,25],[70,-63,25],[70,63,25]].entries()) carObjects.push(cylinder('wheel-'+(i+1),(i<2?'Ruota posteriore ':'Ruota anteriore ')+(i%2+1),25,20,p,'#252d3e',[90,0,0],'wheels'));
 const car=project('Un’automobile',carObjects,[{id:'wheels',name:'Quattro ruote'}]);
-for(const [file,state] of Object.entries({house,robot,car})) writeFileSync(new URL(`../public/examples/${file}.json`,import.meta.url),JSON.stringify(state,null,2)+'\n');
+const advanced=project('Forme complesse',[
+  {...shape('vase','lathe','Vaso sagomato',{radius:38,height:110},[-150,0,55],'#e9ad73'),profile:[[25,0],[32,15],[38,40],[31,75],[22,95],[25,110]]},
+  {...cylinder('vase-hole','Cavità del vaso',16,100,[-150,0,72],'#91bff1'),hole:true,targetIds:['vase']},
+  {...shape('tower','extrude','Torre ritorta',{x:40,y:40,z:120},[-50,0,60],'#62c7a5'),profile:[[0,10],[10,0],[30,0],[40,10],[40,30],[30,40],[10,40],[0,30]],modifiers:[{type:'twist',axis:'z',angle:120},{type:'taper',axis:'z',factor:.7}]},
+  {...box('arch','Maniglia curva',[10,15,120],[50,0,60],'#91bff1'),modifiers:[{type:'bend',axis:'z',angle:180}]},
+  shape('ring','torus','Anello',{radius:32,tube:10},[160,0,10],'#c88de5'),
+  {...shape('wing','extrude','Ala sagomata',{x:75,y:25,z:8},[20,-90,20],'#f0cd6b'),profile:[[0,0],[75,0],[55,20],[10,25]],modifiers:[{type:'twist',axis:'x',angle:20}]},
+]);
+for(const [file,state] of Object.entries({house,robot,car,advanced})) writeFileSync(new URL(`../public/examples/${file}.json`,import.meta.url),JSON.stringify(state,null,2)+'\n');

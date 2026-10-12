@@ -5,10 +5,23 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**102 tests passed** with npm test. The suite covers:
+**121 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
+- Advanced shapes: torus dimensions/volume/empty central ray, concave extrusion
+  volume and scaling, closed radial revolution and analytical frustum volumes.
+  Invalid/self-intersecting profiles, field limits and JSON round trips are covered.
+- Ordered twist/bend/taper: measured volume, curved extents, finite normals,
+  sparse imported STL subdivision, original vertex preservation, reset, undo/redo,
+  malformed/folding/budget errors and atomicity. Geometry updates preserve view
+  mesh IDs; profiled/deformed holes cut real material and moving them restores it.
+  Baking strips evaluated modifiers/profile so they cannot run twice.
+- Forme complesse validates, opens and exports/reimports STL, including the vase's
+  real cavity. Mock AI can create a profile then deform it using bounded JSON.
+  Property controls edit profile coordinates and modifier axes/parameters; simulated
+  selects have a read-only type as native selects do. Invalid profiles/folded bends
+  retain the original scene, and new explanations do not show object placeholders.
 - Exact schemas, bounded objects/operations, finite numbers, stable IDs, invalid
   references, arbitrary-code fields, prototype pollution and atomic batches.
 - Forty independent undo/redo snapshots, branch replacement and reset.

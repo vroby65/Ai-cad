@@ -25,7 +25,7 @@ test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   const modules=await readFile(new URL('../public/js/app.js',import.meta.url),'utf8');
   assert.equal(modules.includes('api.php'),false);
   assert.equal(modules.includes('demo.js'),false);
-  for(const path of ['/','/js/app.js','/js/chat.js','/js/properties.js','/js/boolean.js','/js/geometry.js','/js/project.js','/js/api.js','/js/account.js','/js/import.js','/vendor/csg-lib.js','/vendor/three.module.js','/vendor/three.core.js','/vendor/OrbitControls.js','/vendor/STLExporter.js','/vendor/STLLoader.js']) assert.equal((await fetch(base+path)).status,200);
+  for(const path of ['/','/js/app.js','/js/chat.js','/js/properties.js','/js/boolean.js','/js/geometry.js','/js/profiles.js','/js/deform.js','/js/project.js','/js/api.js','/js/account.js','/js/import.js','/vendor/csg-lib.js','/vendor/three.module.js','/vendor/three.core.js','/vendor/OrbitControls.js','/vendor/STLExporter.js','/vendor/STLLoader.js']) assert.equal((await fetch(base+path)).status,200);
   assert.match(html,/<form id="property-form"><fieldset id="property-fields">/);
   assert.match(html,/id="property-error"[^>]*aria-live="polite"/);
 });
@@ -34,7 +34,9 @@ test('Solo file pubblici: backend ritirato, chiavi e sorgenti privati non espost
   assert.equal((await fetch(base,{method:'POST',body:'{}'})).status,405);
 });
 test('Gli esempi sono disponibili come JSON statici',async()=>{
-  for(const name of ['house','robot','car']) {
+  const html=await (await fetch(base)).text();
+  for(const name of ['house','robot','car','advanced']) {
+    assert.ok(html.includes(`data-example="${name}"`));
     const response=await fetch(`${base}/examples/${name}.json`); assert.equal(response.status,200);
     assert.ok((await response.json()).objects.length>0);
   }

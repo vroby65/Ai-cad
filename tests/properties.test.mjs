@@ -15,7 +15,11 @@ class Element extends EventTarget {
   replaceChildren(...children){this.children=[];this.append(...children);}
   setAttribute(name,value){this.attributes[name]=String(value);}
 }
-const document={createElement:tag=>new Element(tag)};
+const document={createElement:tag=>{
+  const element=new Element(tag);
+  if(tag==='select') Object.defineProperty(element,'type',{get:()=> 'select-one'});
+  return element;
+}};
 const box={id:'body',type:'box',name:'Corpo',color:'#ff0000',dimensions:{x:100,y:80,z:60},position:[0,0,30],rotation:[0,0,0],groupId:null};
 function setup(object=box){
   const form=new Element('form'),fields=new Element('fieldset'),error=new Element('output');
@@ -132,4 +136,24 @@ test('Il pannello può spostare e ridimensionare il foro conservato da subtract'
   assert.equal(error.textContent,'');const changed=history.current.objects.find(o=>o.id==='hole');
   assert.equal(changed.position[0],25);assert.equal(changed.dimensions.x,20);assert.deepEqual(changed.targetIds,['body']);
   assert.deepEqual(history.current.objects[0],box);assert.deepEqual(history.undo(),drilled);
+});
+
+test('Profilo e parametri di deformazione si modificano nel pannello mantenendo ID e cronologia',()=>{
+  const object={...box,type:'extrude',dimensions:{x:20,y:10,z:60},profile:[[0,0],[20,0],[20,10],[0,10]],modifiers:[{type:'twist',axis:'z',angle:45}]};
+  const {editor,history,submit,error,calls}=setup(object);
+  assert.equal(editor.inputs['modifiers.0.axis'].type,'select-one');
+  editor.inputs['profile.1.0'].value='15';editor.inputs['modifiers.0.angle'].value='90';submit();
+  assert.equal(error.textContent,'');assert.equal(calls(),1);assert.equal(history.current.objects[0].id,'body');
+  assert.deepEqual(history.current.objects[0].profile,[[0,0],[15,0],[20,10],[0,10]]);
+  assert.deepEqual(history.current.objects[0].modifiers,[{type:'twist',axis:'z',angle:90}]);
+  editor.inputs['modifiers.0.axis'].value='x';submit();assert.equal(error.textContent,'');assert.equal(history.current.objects[0].modifiers[0].axis,'x');
+  history.undo();assert.equal(history.current.objects[0].modifiers[0].axis,'z');history.undo();assert.deepEqual(history.current.objects[0],object);
+});
+
+test('Profilo non valido e piegatura ripiegata non modificano la scena tramite Applica',()=>{
+  const object={...box,type:'extrude',profile:[[0,0],[100,0],[100,80],[0,80]],modifiers:[{type:'bend',axis:'z',angle:10}]};
+  const {editor,history,submit,error,calls}=setup(object);
+  editor.inputs['profile.1.0'].value='0';submit();assert.ok(error.textContent);assert.equal(calls(),0);
+  editor.render(object);editor.inputs['modifiers.0.angle'].value='180';submit();assert.ok(error.textContent);assert.equal(calls(),0);
+  assert.deepEqual(history.current.objects[0],object);assert.equal(history.canUndo,false);
 });

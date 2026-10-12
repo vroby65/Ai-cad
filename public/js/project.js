@@ -1,5 +1,8 @@
 import { MAX_PROJECT_BYTES, MAX_OBJECTS, MAX_OPERATIONS, MAX_STL_TRIANGLES, MAX_HOLES, MAX_BOOLEAN_PAIRS } from './limits.js';
 import { carveObject } from './boolean.js';
+import { geometryFor } from './geometry.js';
+import { validateProfile } from './profiles.js';
+import { validateModifiers } from './deform.js';
 
 export function fields(value,required,optional=[]) {
   if(!value || typeof value!=='object' || Array.isArray(value) || Object.getPrototypeOf(value)!==Object.prototype) throw new Error('Atteso un oggetto JSON.');
@@ -20,9 +23,11 @@ function vector(value,limit=100000) {
   for(const n of value) number(n,-limit,limit);
 }
 function dimensions(value,type) {
-  const keys={box:['x','y','z'],sphere:['radius'],cylinder:['radius','height'],cone:['radius','height'],mesh:['x','y','z']}[type];
+  const keys={box:['x','y','z'],sphere:['radius'],cylinder:['radius','height'],cone:['radius','height'],torus:['radius','tube'],extrude:['x','y','z'],lathe:['radius','height'],mesh:['x','y','z']}[type];
   if(!Array.isArray(keys)) throw new Error('Primitiva non autorizzata.');
   fields(value,keys); for(const key of keys) number(value[key],type==='mesh'?0:.1,10000);
+  if(type==='torus' && (value.tube>=value.radius || value.radius+value.tube>5000)) throw new Error('Toro: il raggio del tubo deve essere minore del raggio principale; diametro massimo 10000 mm.');
+  if(type==='lathe' && value.radius>5000) throw new Error('Rivoluzione: raggio massimo 5000 mm.');
 }
 function meshVertices(o) {
   if(!Array.isArray(o.vertices) || !o.vertices.length || o.vertices.length%9 || o.vertices.length>MAX_STL_TRIANGLES*9) throw new Error('Mesh: consentiti da 1 a 20000 triangoli.');
@@ -36,7 +41,10 @@ function meshVertices(o) {
   if(min.filter((n,i)=>max[i]>n).length<2) throw new Error('La mesh deve avere una superficie.');
 }
 function object(value) {
-  fields(value,['id','type','name','dimensions','position','rotation','color','groupId'],value?.type==='mesh'?['vertices']:['hole','targetIds']);
+  const profiled=['extrude','lathe'].includes(value?.type);
+  fields(value,['id','type','name','dimensions','position','rotation','color','groupId',...(profiled?['profile']:[])],['modifiers',...(value?.type==='mesh'?['vertices']:['hole','targetIds'])]);
+  if(profiled) validateProfile(value.profile,value.type);
+  if(Object.hasOwn(value,'modifiers')) validateModifiers(value.modifiers);
   if(Object.hasOwn(value,'hole') && typeof value.hole!=='boolean') throw new Error('hole deve essere un booleano.');
   id(value.id); text(value.name,80);
   if(Object.hasOwn(value,'targetIds')) {
@@ -121,9 +129,14 @@ export function applyOperations(state,batch) {
         if(Object.hasOwn(op.object,'targetIds')) throw new Error('I bersagli dei fori si collegano con subtract, non con create.');
         next.objects.push(structuredClone(op.object)); break;
       case 'update':
-        fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole']);
+        fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole','profile','modifiers']);
         if(!Object.keys(op.changes).length) throw new Error('Modifiche vuote.');
         Object.assign(find(next,op.id),structuredClone(op.changes)); break;
+      case 'deform': {
+        fields(op,['op','id','modifiers']);validateModifiers(op.modifiers);
+        const object=find(next,op.id);object.modifiers=structuredClone(op.modifiers);
+        const geometry=geometryFor(object);geometry.dispose();break;
+      }
       case 'resize':
         fields(op,['op','id','dimensions']); find(next,op.id).dimensions=structuredClone(op.dimensions); break;
       case 'translate': case 'rotate': {

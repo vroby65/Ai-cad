@@ -9,8 +9,8 @@ function holesFor(object,project) {
 }
 export function geometrySignature(object,project) {
   const holes=holesFor(object,project);
-  return JSON.stringify([object.type,object.dimensions,object.vertices,object.hole,
-    holes.length ? [object.position,object.rotation,holes.map(hole=>[hole.id,hole.type,hole.dimensions,hole.position,hole.rotation])] : null]);
+  return JSON.stringify([object.type,object.dimensions,object.vertices,object.profile,object.modifiers,object.hole,
+    holes.length ? [object.position,object.rotation,holes.map(hole=>[hole.id,hole.type,hole.dimensions,hole.profile,hole.modifiers,hole.position,hole.rotation])] : null]);
 }
 function transform(object) {
   const rotation=new THREE.Quaternion().setFromEuler(new THREE.Euler(...object.rotation.map(THREE.MathUtils.degToRad),'XYZ'));
@@ -95,7 +95,7 @@ export function carveObject(object,tools) {
     const center=geometry.boundingBox.getCenter(new THREE.Vector3()),size=geometry.boundingBox.getSize(new THREE.Vector3());
     const position=center.clone().applyMatrix4(transform(object));
     geometry.translate(-center.x,-center.y,-center.z);
-    const {hole,targetIds,vertices,...result}=object;
+    const {hole,targetIds,vertices,profile,modifiers,...result}=object;
     return {...result,type:'mesh',dimensions:{x:size.x,y:size.y,z:size.z},position:position.toArray(),vertices:Array.from(geometry.getAttribute('position').array)};
   } finally { geometry.dispose(); }
 }

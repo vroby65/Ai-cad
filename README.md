@@ -81,18 +81,46 @@ line break. Examples:
 - `Crea un foro cilindrico passante di diametro 20 mm nel cubo.` — drill a hole.
 - `Scava i vani ruota nella carrozzeria e nei parafanghi, conserva le ruote.`
 - `Sposta questo oggetto di 50 mm lungo X.` — move the selected object.
+- `Crea una torre esagonale alta 120 mm, ritorta di 120 gradi e rastremata in cima.`
+- `Crea una maniglia curva piegando di 180 gradi una barra 10×15×120 mm lungo Z.`
+- `Crea una bottiglia tornita con spalle arrotondate e collo stretto, poi scavala.`
 
 Left-drag rotates, the wheel zooms and right-drag pans. Click a solid or use the
 collapsible **Oggetti** panel to select it. **Inquadra** fits visible material.
 The scene includes a grid and XYZ axes. One unit is one millimeter; Z is vertical.
 
-Shapes: boxes/cubes, spheres, cylinders and cones. Commands can change position,
+Shapes: boxes/cubes, spheres, cylinders, cones, tori, profile extrusions and solids
+of revolution. Commands can change position,
 rotation, dimensions, color and name; duplicate, delete, group and ungroup objects.
 Stable IDs preserve object identity.
 
 The AI returns strictly validated JSON operations, never executable code.
 Unknown fields, bad types, missing IDs and excessive sizes are rejected.
 Each batch is atomic: an error leaves the original project intact.
+
+## Profiles and deformations
+
+DeepSeek can define a simple 2D outline and extrude it into a shaped body, wing or
+concave bracket, or revolve a radial profile into a bottle, vase or turned part.
+Profiles contain up to 64 reference points in mm; dimensions scale their extents.
+Extrusions are centered and run along local Z. Revolution runs around local Z and
+closes the ends; a hollow vessel requires additional hole tools and subtraction.
+Tori have a main radius and tube radius, with their ring in the local XY plane.
+
+**Twist**, **bend** and **taper** modify the actual mesh, including imported STL.
+Up to six ordered modifiers keep the original geometry, ID and editing information.
+Deformations run before editable cuts. JSON retains their parameters and source;
+STL contains the evaluated surface. Undo/redo includes these changes.
+Select the part to edit profile coordinates, deformation axes, angles or taper
+factors in **Oggetti**, then press **Applica**. Ask the chat to add/remove modifiers
+or change the number of profile points. `Rimuovi le deformazioni da questo oggetto`
+restores its base shape; dimensions refer to that base rather than the bent extent.
+
+Bend acts in the planes X→Y, Y→Z or Z→X. Excessively tight bends, self-intersecting
+profiles and results over 20000 triangles or 10000 mm per axis are rejected.
+Twist supports ±720°, bend ±180°, taper factors 0.05–4. Surfaces are sampled meshes:
+compound operations can hit the complexity limit. Freeform NURBS surfaces, lofts,
+CAD fillets and geometric constraints are not implemented.
 
 ## Real holes and subtraction
 
@@ -186,7 +214,9 @@ Drag the separator above the chat with mouse or touch to adjust height. Focus it
 with Tab and use Up/Down, Home or End. Limits adapt to the window; height is not
 persisted. The prompt stays on one compact row and scrolls for long text.
 
-Starter projects: house, robot and car. They open without API calls; natural-language
+Starter projects: house, robot, car and **Forme complesse** (a hollow profiled vase,
+twisted/tapered tower, curved handle, torus and shaped wing).
+They open without API calls; natural-language
 edits require DeepSeek. The house's doors/windows are decorations and its roof
 uses rotated boxes.
 
@@ -232,6 +262,9 @@ Manual Firefox checks:
 9. Answer a clarification with a short reply; check earlier preferences and IDs.
 10. Edit primitive/mesh/hole values, undo/redo, and confirm the next AI command
     uses the manually updated state.
+11. Open Forme complesse; edit profiles, modifier axes/angles/factors and the vase
+    hole, then save/reopen JSON and export/reimport STL. Deform a simple imported
+    closed STL and ask the chat to remove its modifiers.
 
 Screenshots will be added to docs/screenshots/ after a real graphical check.
 No simulated screenshots are included. Browser/WebGL testing is not yet verified.

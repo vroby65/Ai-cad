@@ -15,7 +15,8 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/properties.js | Selected-object form, typed changes and inline errors |
 | js/layout.js | Chat separator, pointer capture, keyboard and adaptive bounds |
 | js/renderer.js | Three.js scene, Z-up camera, selection and stable-ID meshes |
-| js/geometry.js | Primitive and imported mesh base geometries |
+| js/geometry.js | Base shapes and shared evaluated geometry builder |
+| js/profiles.js, js/deform.js | Validated profiles, sampling and ordered transformations |
 | js/boolean.js | Local CSG subtraction, baked meshes and cache signatures |
 | js/state.js | Forty independent undo/redo snapshots |
 | js/files.js | Validated JSON, size checks and local downloads |
@@ -78,8 +79,8 @@ from current state; the fieldset is disabled while asynchronous work is in progr
 
 ## State, coordinates and meshes
 
-Version 1 has box/sphere/cylinder/cone objects and mesh objects from STL, saved JSON
-or local subtraction. Legacy primitive projects remain valid. Units are mm.
+Version 1 has box/sphere/cylinder/cone/torus/extrude/lathe objects and mesh objects
+from STL, saved JSON or local subtraction. Legacy projects remain valid. Units are mm.
 Coordinates are right-handed with Z vertical; position is the object's center and
 rotation is local Euler XYZ in degrees. Cylinder/cone axes are Z before rotation.
 
@@ -94,9 +95,44 @@ to members with duplicates removed. Rotation adds Euler components around each
 member's own center; there is no shared assembly pivot.
 
 Meshes remain in a Three.js Map by ID. Changed geometry is replaced and disposed;
-simple edits preserve geometry. Cache signatures include vertices and applicable
-tools plus their relative transforms. Raycasts ignore invisible tools and helpers.
+simple edits preserve geometry. Cache signatures include vertices, profiles,
+modifiers and applicable tools plus their relative transforms. Raycasts ignore
+invisible tools and helpers.
 ResizeObserver updates the canvas when its viewport changes.
+
+## Profiles and deformations
+
+profiles.js validates 2D reference points without accepting executable code or
+AI-generated mesh vertices. Extrusions accept simple concave contours with 3–64
+points; nonadjacent edge intersections and degenerate profiles are rejected.
+Three.js triangulates the closed outline, extrudes along Z, centers it and scales
+it to dimensions. Revolution accepts 2–64 ordered [radius,Z] points, nonnegative
+radii with positive interior radii, and closes both ends on the axis. It uses 64
+radial segments, scales radius/height and aligns the lathe axis to Z.
+Tori use 24 tube segments and 64 radial segments.
+
+deform.js validates up to six ordered twist/bend/taper modifiers on any object type.
+geometryFor builds the undeformed source, then applies those modifiers before CSG.
+Each stage uses its current bounding box and the specified local axis. The source
+object's dimensions/profile/vertices remain unchanged. Clearing modifiers restores
+that source; baking a subtraction stores the evaluated vertices and removes the
+profile/modifiers to avoid applying them twice.
+
+Triangles are clipped against shared axis slabs and retriangulated before nonlinear
+transformation. Twist also uses four transverse slabs per nonzero cross-section
+axis; its axial sampling is at most 3.75° per step, bend at most 7.5°, taper eight
+steps. Interpolated normals are transformed by the inverse Jacobian and normalized.
+This makes sparse box/STL surfaces curve rather than merely moving their corners.
+Each intermediate subdivision is capped at 20000 triangles; deformed coordinates
+and extents are bounded to 10000 mm. Tight bends are rejected before inversion.
+These are sampled surface transformations, with no guarantee against compound
+self-intersections and no NURBS, loft or geometric constraint solver.
+
+The property form exposes profile coordinates and existing modifier axes/parameters.
+It uses the same atomic update path and preserves invalid drafts. Adding/removing
+modifier stages or changing the point count is handled by chat JSON operations.
+Tool signatures include their own profile/modifiers, so changed deformed holes also
+invalidate affected solids. View, export and subtraction share the same builder.
 
 ## Subtraction
 

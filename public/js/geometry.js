@@ -1,6 +1,11 @@
 import * as THREE from 'three';
+import { profileGeometry } from './profiles.js';
+import { applyModifiers } from './deform.js';
 
 export function geometryFor(object) {
+  return applyModifiers(baseGeometry(object),object.modifiers);
+}
+function baseGeometry(object) {
   const d=object.dimensions;
   switch(object.type) {
     case 'box': return new THREE.BoxGeometry(d.x,d.y,d.z);
@@ -13,6 +18,8 @@ export function geometryFor(object) {
       const g=new THREE.ConeGeometry(d.radius,d.height,48);
       g.rotateX(Math.PI/2); return g;
     }
+    case 'torus': return new THREE.TorusGeometry(d.radius,d.tube,24,64);
+    case 'extrude': case 'lathe': return profileGeometry(object);
     case 'mesh': {
       const g=new THREE.BufferGeometry();
       g.setAttribute('position',new THREE.Float32BufferAttribute(object.vertices,3));

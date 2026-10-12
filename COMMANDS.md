@@ -30,7 +30,8 @@ does not modify the model. public/js/project.js is the validation authority.
 }
 ~~~
 
-Shown fields are required. Primitive objects may also have boolean hole, default
+Shown fields are required. Extrude/lathe additionally require profile. All types
+may have optional modifiers, default []. Primitive objects may also have boolean hole, default
 false, and engine-managed targetIds. Meshes have required vertices instead;
 hole/targetIds are not allowed on a mesh. TargetIds is a list of 0–200 distinct
 existing full-object IDs, not groups. It is stored by subtract and cannot be supplied
@@ -54,10 +55,85 @@ Numeric strings, booleans, null and nonfinite values are not numbers.
 | box | {"x":100,"y":80,"z":60}; equal dimensions make a cube |
 | sphere | {"radius":40} |
 | cylinder, cone | {"radius":30,"height":60} |
+| torus | {"radius":40,"tube":10}; ring radius and tube radius |
+| extrude | {"x":40,"y":30,"z":20}; scaled outline and extrusion depth |
+| lathe | {"radius":40,"height":100}; maximum radius and axial height |
 | mesh | {"x":100,"y":80,"z":60}; bounding-box extents |
 
 Primitive dimensions: 0.1–10000 mm. Mesh dimensions: 0–10000 mm; zero is allowed
 only on an axis whose base vertices have zero extent.
+Torus requires tube < radius and radius + tube ≤5000 mm. Lathe radius ≤5000 mm.
+The torus lies in local XY; extrusion/revolution axes are local Z before rotation.
+Position is the base reference center; deformation can shift the resulting bounds.
+
+## Reference profiles
+
+Only extrude/lathe objects may contain profile. Every point is two finite numbers
+within ±10000 mm, with each reference extent ≤10000 mm. Repeated consecutive points
+and zero-height profiles are rejected. Coordinates are reference data: dimensions
+set the final undeformed extents, independently of these reference magnitudes.
+
+- Extrude: 3–64 [x,y] points around a simple, nonzero-area contour, concave or convex.
+  Nonadjacent edges must not cross/touch. The last point may repeat the first; an
+  omitted closing point is added automatically. The outline is centered in XY,
+  scaled to dimensions.x/y and extruded symmetrically along Z to dimensions.z.
+- Lathe: 2–64 [radius,Z] points in nondecreasing Z order (equal Z allows shoulders).
+  Radii are nonnegative, with positive radii at all interior points and a positive
+  maximum. At least two distinct Z values are required. The engine closes ends
+  to the axis, revolves 360° around Z, centers height, then scales to radius/height.
+  This is a closed solid: a hollow vessel needs additional hole tools/subtraction.
+
+~~~json
+{"message":"Creo una staffa a L e un solido tornito.","operations":[
+  {"op":"create","object":{
+    "id":"bracket","type":"extrude","name":"L bracket",
+    "dimensions":{"x":40,"y":30,"z":20},
+    "profile":[[0,0],[40,0],[40,10],[10,10],[10,30],[0,30]],
+    "position":[0,0,10],"rotation":[0,0,0],"color":"#62c7a5","groupId":null
+  }},
+  {"op":"create","object":{
+    "id":"turned","type":"lathe","name":"Turned body",
+    "dimensions":{"radius":40,"height":100},
+    "profile":[[20,0],[40,50],[10,100]],
+    "position":[100,0,50],"rotation":[0,0,0],"color":"#91bff1","groupId":null
+  }}
+]}
+~~~
+
+## Ordered deformations
+
+All types, including imported meshes, accept up to six modifiers. Each has exactly
+three fields: type, axis and the required numeric angle or factor.
+
+~~~json
+{"op":"deform","id":"bracket","modifiers":[
+  {"type":"twist","axis":"z","angle":45},
+  {"type":"taper","axis":"z","factor":0.7}
+]}
+~~~
+
+Axes are exactly x/y/z. Modifiers evaluate in order against each stage's bounds,
+in local coordinates before object rotation/translation and before holes.
+
+| type | parameter | behavior |
+| --- | --- | --- |
+| twist | angle, −720…720° | rotate cross-sections from zero at the negative axis end to angle at the positive end |
+| bend | angle, −180…180° | bend the axis into an arc: X toward Y, Y toward Z, Z toward X; negative angle reverses direction |
+| taper | factor, 0.05…4 | linearly scale transverse sections from 1 at the negative end to factor at the positive end |
+
+Deform replaces the complete list, not appends; modifiers:[] restores the original
+source. Create can include modifiers; update can change the whole list or profile.
+IDs and base dimensions/profile/vertices remain unchanged. Dimension edits scale
+the source before reevaluating modifiers. JSON retains editing information; STL
+contains the transformed mesh. Baked subtraction removes profile/modifiers because
+their evaluated effect is already stored in its mesh vertices.
+
+Sparse triangles are subdivided for curved surfaces. Intermediate results are
+limited to 20000 triangles; deformed coordinates/extents to 10000 mm. A nonzero
+modifier on a zero-extent axis is rejected. Bends whose half-thickness exceeds 95%
+of the bend radius are rejected to avoid local inversion. Identity modifiers are
+skipped. Complex chains/cuts can exceed the budget; compound self-intersections
+are not exhaustively detected. Profiles contain linear segments, not NURBS curves.
 
 ## Allowed operations
 
@@ -66,7 +142,8 @@ The object in create must follow the primitive schema.
 
 ~~~text
 {op:"create", object}
-{op:"update", id, changes:{name?,color?,position?,rotation?,dimensions?,hole?}}
+{op:"update", id, changes:{name?,color?,position?,rotation?,dimensions?,hole?,profile?,modifiers?}}
+{op:"deform", id, modifiers:[...]}
 {op:"resize", id, dimensions}
 {op:"translate", ids, delta:[x,y,z]}
 {op:"rotate", ids, delta:[x,y,z]}
@@ -79,7 +156,8 @@ The object in create must follow the primitive schema.
 
 - Create needs a new ID; the AI cannot create a mesh or supply vertices.
 - Update requires at least one change and sets absolute values. Type, ID,
-  groupId and vertices cannot be changed directly. Hole is primitive-only.
+  groupId and vertices cannot be changed directly. Hole is primitive-only,
+  profile is extrude/lathe-only, modifiers can change on any type.
 - Resize sets all dimensions and keeps the center.
 - Translate adds delta, components ±100000 mm.
 - Rotate adds Euler components, ±36000 degrees; each member rotates on its own
@@ -197,6 +275,9 @@ See [DeepSeek's multi-round guide](https://api-docs.deepseek.com/guides/multi_ro
 The property panel uses the same update schema, with absolute values for name,
 color, position, rotation and dimensions. Applica creates a single atomic, undoable
 batch locally, without calling DeepSeek. It cannot change IDs/type/groups/vertices.
+For profiled objects it also edits reference point coordinates; for modified
+objects it edits existing modifier axes/angles/factors. Point/modifier counts
+are changed through chat operations. Geometry failures leave the scene unchanged.
 
 A complete choices[0].finish_reason:"stop" and string message.content are required.
 The raw content reaches the chat before validation; invalid/truncated content is

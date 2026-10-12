@@ -12,6 +12,7 @@ archive outside the public deployment.
 - Schemas/operations: project.js; limits: limits.js; AI: api.js.
 - Key storage/balance: account.js and app.js.
 - View: renderer.js; base geometry: geometry.js; cuts: boolean.js.
+- Profiles: profiles.js; sampled deformations: deform.js.
 - State/history: state.js; JSON: files.js; STL: import.js and export.js.
 - Examples: public/examples/ and scripts/create-examples.mjs.
 - Dependencies: public/vendor/, scripts/vendor-three.sh, scripts/vendor-csg.sh.
@@ -70,6 +71,21 @@ vertices out of the form and lock originally planar mesh axes. Applica emits one
 update via applyOperations and prepare/commit, preserving IDs and undo/redo.
 Unchanged values do not add history. Reject invalid edits atomically, show inline
 errors and retain the draft; disable editing while asynchronous work is in progress.
+
+Allowed generated types also include torus, extrude and lathe. Profiles are bounded
+2D reference data, never executable code: simple closed contours for extrusion,
+ordered nonnegative radial/Z points for closed revolution. Dimensions scale the
+source extents. Keep strict validation in profiles.js and document the contract.
+Optional modifiers (maximum six) support twist/bend/taper on primitives, profiled
+shapes and imported meshes; deform replaces the whole list, [] restores the source.
+Apply them before cuts. Preserve source type/profile/vertices and stable IDs; baked
+mesh replacements must remove profile/modifiers to prevent double application.
+Cache signatures include target/tool profiles and modifiers. The property editor
+exposes point coordinates and existing modifier axes/parameters with undo/redo.
+Keep angular/radius/factor bounds and the 20000-triangle/10000-mm evaluation limits;
+reject foldovers and invalid batches without changing the scene. Normals need the
+inverse Jacobian; sparse STL and box surfaces must be subdivided before bending or
+twisting. Do not weaken complexity limits or claim NURBS/lofts/precision CAD support.
 
 For drilling, use subtract with explicit full ids and primitive-hole toolIds.
 Default to preserving original solids and editable tools. Store expanded targetIds
