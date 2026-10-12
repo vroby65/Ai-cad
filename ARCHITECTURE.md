@@ -101,8 +101,10 @@ rejected. GitHub Pages never contacts this service. Start it with npm run logs.
 
 ## Selected-object editing
 
-PropertyEditor creates labeled fields for name/color, center XYZ, Euler XYZ and the
-dimensions of the selected type. Planar mesh axes are disabled. The form reads
+PropertyEditor creates labeled fields for name/color, center XYZ, relative world
+rotation increments and the dimensions of the selected type. Rotation fields start
+at zero and reset after application; they use project.js rotateAngles to calculate
+the resulting absolute Euler XYZ pose for one update. Planar mesh axes are disabled. The form reads
 finite numbers and emits one update operation containing only changed fields;
 unchanged submissions create no snapshot. IDs/type/groups/vertices are not editable.
 app.js uses applyOperations and the same prepare/commit path as AI commands, so
@@ -115,7 +117,8 @@ from current state; the fieldset is disabled while asynchronous work is in progr
 Version 1 has box/sphere/cylinder/cone/torus/extrude/lathe objects and mesh objects
 from STL, saved JSON or local subtraction. Legacy projects remain valid. Units are mm.
 Coordinates are right-handed with Z vertical; position is the object's center and
-rotation is local Euler XYZ in degrees. Cylinder/cone axes are Z before rotation.
+rotation stores absolute intrinsic Euler XYZ in degrees. Cylinder/cone axes are Z
+before rotation. Existing JSON poses and explicit update.rotation retain this meaning.
 
 Mesh vertices are centered local triangle positions; dimensions scales relative
 to their original extents. Import recenters vertices and preserves the world center.
@@ -124,8 +127,14 @@ vertices or create meshes directly. Nonparametric meshes support transformations
 name/color, duplication, grouping, deletion and further cuts.
 
 Groups are flat; every object belongs to zero or one group. Group targets expand
-to members with duplicates removed. Rotation adds Euler components around each
-member's own center; there is no shared assembly pivot.
+to members with duplicates removed. Relative rotations compose quaternions around
+fixed world axes, applying X then Y then Z, and convert the final orientation back
+to bounded Euler XYZ for storage. Adding Euler components was incorrect for already
+tilted objects. At Y=±90°, direct intrinsic Euler X/Z controls also share an axis
+(gimbal lock); the panel now exposes independent world-axis increments instead.
+Both paths use the same validated rotateAngles helper. Equivalent stored Euler
+values may change together; existing files are not reinterpreted or migrated.
+Each member rotates around its own center; there is no shared assembly pivot.
 
 Meshes remain in a Three.js Map by ID. Changed geometry is replaced and disposed;
 simple edits preserve geometry. Cache signatures include vertices, profiles,

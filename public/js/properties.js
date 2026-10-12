@@ -1,3 +1,5 @@
+import { rotateAngles } from './project.js';
+
 export class PropertyEditor {
   constructor(form,fields,error,onApply,document=globalThis.document) {
     this.fields=fields; this.error=error; this.onApply=onApply; this.document=document;
@@ -31,11 +33,13 @@ export class PropertyEditor {
     this.fields.replaceChildren(); this.error.textContent=''; this.setBusy(busy);
     if(!object) return;
     this.fields.append(this.input('name','Nome','text',object.name),this.input('color','Colore','color',object.color));
-    for(const [key,title,values,limit] of [['position','Centro · mm',object.position,100000],['rotation','Rotazione · °',object.rotation,36000]]) {
+    for(const [key,title,values,limit] of [['position','Centro · mm',object.position,100000],['rotation','Ruota di · ° (assi della griglia)',[0,0,0],36000]]) {
       const group=this.node('fieldset'),row=this.node('div'); row.className='property-vector';
       group.append(this.node('legend',title));
       for(const [i,axis] of ['x','y','z'].entries()) row.append(this.input(key+'.'+axis,axis.toUpperCase(),'number',values[i],-limit,limit));
-      group.append(row); this.fields.append(group);
+      group.append(row);
+      if(key==='rotation') group.append(this.node('small','Incrementi X → Y → Z. Applica ruota il pezzo; i campi tornano a zero.'));
+      this.fields.append(group);
     }
     const group=this.node('fieldset'); group.append(this.node('legend','Dimensioni · mm'));
     const labels={x:'X · larghezza',y:'Y · profondità',z:'Z · altezza',radius:'Raggio',height:'Altezza',tube:'Raggio tubo'};
@@ -76,6 +80,7 @@ export class PropertyEditor {
       else if(field==='modifiers') values.modifiers[axis][parameter]=Number(input.value);
       else values[field][['x','y','z'].indexOf(axis)]=Number(input.value);
     }
+    values.rotation=rotateAngles(this.object.rotation,values.rotation);
     return Object.fromEntries(Object.entries(values).filter(([key,value])=>JSON.stringify(value)!==JSON.stringify(this.object[key])));
   }
 }

@@ -5,7 +5,7 @@ export function explain(op) {
   switch(op.op) {
     case 'create': return `Crea ${op.object.name} (${op.object.type}${op.object.hole ? ' · FORO: sottrae materiale' : ''}): ${dimensions(op.object.dimensions)}; centro [${vector(op.object.position)}] mm; colore ${op.object.color}${op.object.profile ? '; profilo: '+op.object.profile.length+' punti' : ''}${op.object.modifiers?.length ? '; '+modifiers(op.object.modifiers) : ''}.`;
     case 'translate': return `Trasla ${op.ids.join(', ')} di [${vector(op.delta)}] mm: somma il vettore alla posizione.`;
-    case 'rotate': return `Aggiunge [${vector(op.delta)}] gradi agli angoli XYZ di ${op.ids.join(', ')}: ogni oggetto ruota attorno al proprio centro.`;
+    case 'rotate': return `Ruota ${op.ids.join(', ')} di [${vector(op.delta)}] gradi sugli assi della griglia, prima X, poi Y, poi Z, componendo l’orientamento esistente. Ogni oggetto ruota attorno al proprio centro.`;
     case 'resize': return `Ridimensiona ${op.id}: ${dimensions(op.dimensions)}; il centro rimane fermo.`;
     case 'deform': return `Deforma ${op.id}: ${modifiers(op.modifiers)}. I parametri restano modificabili.`;
     case 'update': return `Modifica ${op.id}: ${Object.entries(op.changes).map(([field,value])=>`${field}: ${field==='hole' ? value ? 'FORO (sottrae materiale)' : 'PIENO' : field==='profile' ? `${value.length} punti di riferimento in mm` : field==='modifiers' ? modifiers(value) : field==='dimensions' ? dimensions(value) : Array.isArray(value) ? `[${vector(value)}] ${field==='rotation' ? '°' : 'mm'}` : value}`).join('; ')}.`;

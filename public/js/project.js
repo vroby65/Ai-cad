@@ -3,6 +3,7 @@ import { carveObject } from './boolean.js';
 import { geometryFor } from './geometry.js';
 import { validateProfile } from './profiles.js';
 import { validateModifiers } from './deform.js';
+import * as THREE from 'three';
 
 export function fields(value,required,optional=[]) {
   if(!value || typeof value!=='object' || Array.isArray(value) || Object.getPrototypeOf(value)!==Object.prototype) throw new Error('Atteso un oggetto JSON.');
@@ -115,6 +116,20 @@ function prune(state) {
   const fullIds=new Set(state.objects.filter(o=>!o.hole).map(o=>o.id));
   for(const object of state.objects) if(object.targetIds) object.targetIds=object.targetIds.filter(id=>fullIds.has(id));
 }
+export function rotateAngles(rotation,delta) {
+  vector(rotation,36000);vector(delta,36000);
+  if(delta.every(angle=>angle===0)) return rotation.slice();
+  const quaternion=new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation.map(THREE.MathUtils.degToRad),'XYZ'));
+  for(let axis=0;axis<3;axis++) if(delta[axis]!==0) {
+    const change=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3().setComponent(axis,1),THREE.MathUtils.degToRad(delta[axis]));
+    quaternion.premultiply(change);
+  }
+  const angles=new THREE.Euler().setFromQuaternion(quaternion.normalize(),'XYZ');
+  return [angles.x,angles.y,angles.z].map(value=>{
+    const degrees=THREE.MathUtils.radToDeg(value);
+    return Math.abs(degrees)<1e-9 ? 0 : Math.round(degrees*1e10)/1e10;
+  });
+}
 
 // Apply to an independent copy: one invalid operation rejects the whole command.
 export function applyOperations(state,batch) {
@@ -143,8 +158,11 @@ export function applyOperations(state,batch) {
         fields(op,['op','id','dimensions']); find(next,op.id).dimensions=structuredClone(op.dimensions); break;
       case 'translate': case 'rotate': {
         fields(op,['op','ids','delta']); vector(op.delta,op.op==='rotate'?36000:100000);
-        const key=op.op==='translate'?'position':'rotation';
-        for(const o of targets(next,op.ids)) o[key]=o[key].map((n,i)=>n+op.delta[i]); break;
+        for(const o of targets(next,op.ids)) {
+          if(op.op==='translate') o.position=o.position.map((n,i)=>n+op.delta[i]);
+          else o.rotation=rotateAngles(o.rotation,op.delta);
+        }
+        break;
       }
       case 'duplicate': {
         fields(op,['op','id','newId','offset']); unused(next,op.newId); vector(op.offset);

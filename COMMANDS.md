@@ -45,7 +45,12 @@ Maximum 200 objects, 200 groups and 8 MiB per project. AI responses: 512 KiB.
 
 Coordinates are right-handed, X/Y horizontal and Z vertical; 1 unit = 1 mm.
 Position is the center, three finite numbers within ±100000 mm.
-Rotation is local Euler XYZ in degrees, each within ±36000.
+Rotation stores absolute intrinsic Euler XYZ in degrees, each within ±36000.
+It is not a vector of independent world-axis turns. Positive angles follow the
+right-hand rule: +X 90° maps local +Z to world −Y; +Y 90° maps +Z to +X.
+At Y=±90° this Euler representation has gimbal lock: X/Z are not independent.
+Use relative rotate for independent turns on fixed world axes. Equivalent Euler
+values may change together after quaternion composition; saved old poses stay valid.
 Unrotated cylinders/cones align with Z; the cone tip is +Z.
 Color is #RRGGBB. GroupId is null or an existing group ID.
 Numeric strings, booleans, null and nonfinite values are not numbers.
@@ -160,8 +165,12 @@ The object in create must follow the primitive schema.
   profile is extrude/lathe-only, modifiers can change on any type.
 - Resize sets all dimensions and keeps the center.
 - Translate adds delta, components ±100000 mm.
-- Rotate adds Euler components, ±36000 degrees; each member rotates on its own
-  center, with no common group pivot.
+- Rotate composes additional turns around fixed world X, then Y, then Z, with
+  delta components within ±36000 degrees. The result is stored as an equivalent
+  absolute Euler XYZ pose. An existing [90,0,0] cylinder points toward −Y; rotate
+  delta:[0,0,90] turns that axis toward +X. This differs from update.rotation:
+  [90,0,90], which sets an absolute intrinsic pose and keeps that axis toward −Y.
+  Each member rotates on its own center, with no common group pivot or position orbit.
 - Duplicate copies one object with a new ID and offset ±100000 mm, outside groups.
 - Ids is a nonempty list of 1–200 distinct object/group IDs. Groups expand to
   members, with overlapping recipients deduplicated.
@@ -276,7 +285,9 @@ Conversation is session-only and resets when a JSON file or example opens.
 See [DeepSeek's multi-round guide](https://api-docs.deepseek.com/guides/multi_round_chat).
 
 The property panel uses the same update schema, with absolute values for name,
-color, position, rotation and dimensions. Applica creates a single atomic, undoable
+color, position and dimensions. Its rotation inputs are additional world-axis
+turns (zero-initialized); rotateAngles computes an absolute rotation for the update
+and clears those inputs after application. Applica creates a single atomic, undoable
 batch locally, without calling DeepSeek. It cannot change IDs/type/groups/vertices.
 For profiled objects it also edits reference point coordinates; for modified
 objects it edits existing modifier axes/angles/factors. Point/modifier counts

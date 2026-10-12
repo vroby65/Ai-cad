@@ -203,12 +203,22 @@ status label remains available; reduced-motion preferences disable the animation
 The indicator disappears on success or error.
 
 Select a part in the scene or object list, open **Oggetti** if needed, and edit its
-name, color, center XYZ, Euler rotation XYZ or dimensions in the sidebar. Press
+name, color, center XYZ or dimensions in the sidebar. **Ruota di · ° (assi della
+griglia)** accepts additional turns around the fixed scene axes, applied X then Y
+then Z with the right-hand sign convention. Press
 **Applica** (or Enter in a field) to commit all changed values together, without an
 API call. Values are in mm or degrees; dimensions match the selected primitive.
 Imported/cut meshes can also be resized; originally planar axes remain locked at
 zero. Invalid edits leave the scene unchanged and show an error in the panel.
 Updates preserve the ID, refresh the geometry and support **Annulla / Ripristina**.
+Rotation fields start at zero and return to zero after applying: entering 30 on X
+turns the current part by another 30° about world X. They are not absolute saved
+Euler angles. This avoids X/Z controls merging when the existing orientation has
+Y at ±90°. Chat `Ruota di 90° su Z` uses the same world-axis composition. The stored
+JSON retains absolute Euler XYZ orientations for compatibility; its equivalent
+numbers can change together after a relative turn. Request an absolute orientation
+through chat when needed. Each part rotates about its own center; groups do not
+orbit around a shared pivot.
 Moving/resizing an editable hole recalculates its cut. Editing is disabled while
 an AI request or file load is in progress.
 

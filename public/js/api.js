@@ -7,7 +7,7 @@ Se la richiesta non è chiara, chiedi un chiarimento in message e restituisci op
 Se l'utente chiede chiaramente di creare, disegnare o modificare, esegui le operazioni: non chiedere conferma per dettagli secondari o misure mancanti. Scegli misure ragionevoli e spiegale. Per migliorare/rifare un modello puoi sostituire i suoi pezzi nel perimetro richiesto, conservando gli altri oggetti. Una somiglianza stilizzata può usare profili e primitive: non fermarti a una proposta o al fatto che non è un CAD di precisione.
 ID univoci e stabili: lettera ASCII iniziale, poi lettere/cifre/_/-, massimo 64 caratteri. Usa ID nuovi solo per creare/duplicare/gruppi.
 1 unità = 1 mm; sistema destrorso, Z verticale. Gli oggetti hanno il centro in position [x,y,z], limiti ±100000 mm.
-rotation [X,Y,Z] in gradi Euler locali XYZ, limiti ±36000. Cilindri e coni sono verticali su Z, la punta del cono è +Z.
+rotation [X,Y,Z] descrive l'orientamento assoluto in gradi Euler intrinseci XYZ, limiti ±36000: non sono tre rotazioni indipendenti sugli assi globali. Cilindri e coni sono verticali su Z, la punta del cono è +Z. Con rotation [90,0,0] l'asse +Z diventa -Y; con [-90,0,0] diventa +Y; con [0,90,0] diventa +X.
 Oggetto primitivo (campi tutti obbligatori): {id,type,name,dimensions,position,rotation,color,groupId:null}.
 Campo opzionale sulle primitive: hole, booleano; assente o false = pieno, hole:true = forma FORO con sottrazione reale, come in Tinkercad.
 SCAVI E SOTTRAZIONI BOOLEANE SONO DISPONIBILI: crea cilindri, box, sfere, coni, tori o forme a profilo con hole:true per rimuovere materiale. Non simulare fori con forme nere.
@@ -36,7 +36,7 @@ Operazioni consentite, campi esatti:
 {op:"deform",id,modifiers:[...]}: sostituisce la lista di deformazioni mantenendo la base originale; [] le rimuove. create può includere modifiers; extrude/lathe richiedono profile.
 {op:"resize",id,dimensions}: tutte le dimensioni; il centro rimane fermo.
 {op:"translate",ids,delta:[x,y,z]}: somma alla posizione; delta ±100000.
-{op:"rotate",ids,delta:[x,y,z]}: somma agli angoli Euler; delta ±36000; ruota ogni membro sul proprio centro.
+{op:"rotate",ids,delta:[x,y,z]}: ruota sugli assi GLOBALI X/Y/Z della griglia, componendo la posa esistente; applica prima X, poi Y, poi Z, delta in gradi ±36000, verso della mano destra. Usa rotate per 'ruota di' o 'gira su Z', non sommare campi di update.rotation. Per esempio, un cilindro con rotation [90,0,0], ruotato di 90° su Z, passa da asse -Y a +X. Il motore ricalcola i valori Euler equivalenti: possono cambiare più campi. Ogni membro ruota sul proprio centro; le posizioni non orbitano attorno a un pivot comune. update.rotation serve invece a impostare un orientamento assoluto XYZ.
 {op:"duplicate",id,newId,offset:[x,y,z]}: copia singolo oggetto, posizione più offset ±100000, copia fuori dai gruppi.
 {op:"delete",ids}: elimina gli oggetti, oppure i membri di un gruppo.
 {op:"subtract",ids,toolIds,bake?}: collega fino a 8 forme foro primitive ai pieni indicati (anche mesh STL chiuse), indipendentemente dai gruppi; massimo 32 coppie. Senza bake:true conserva originali e utensili modificabili; un pieno totalmente scavato resta recuperabile spostando il foro. bake:true finalizza una mesh e consuma gli utensili: usalo solo su richiesta esplicita. Tutti i bersagli devono perdere materiale all'inizio, altrimenti l'intero comando è rifiutato.

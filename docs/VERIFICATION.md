@@ -5,10 +5,18 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**130 tests passed** with npm test. The suite covers:
+**136 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
+- Relative rotation regression: an X-tilted cylinder must turn on world Z rather
+  than merely adding its Euler Z component. Three failing regressions preceded the
+  fix. Quaternion composition, multi-axis order/inverse, stable IDs, JSON/undo/redo,
+  actual STL extents and a ray through a jointly rotated solid/hole are checked.
+  Existing absolute Euler poses remain unchanged when loading or using update.
+- The reported X/Z fusion is covered at Y=90°: property controls apply distinct
+  world X/Z increments, reset after Applica and add no history for unchanged zero
+  inputs. Equivalent absolute poses are compared through real Three.js quaternions.
 - Advanced shapes: torus dimensions/volume/empty central ray, concave extrusion
   volume and scaling, closed radial revolution and analytical frustum volumes.
   Invalid/self-intersecting profiles, field limits and JSON round trips are covered.

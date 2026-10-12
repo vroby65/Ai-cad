@@ -66,6 +66,14 @@ chat/context, prompt, undo/redo and view; confirm before discarding scene/chat/d
 history, and block while busy. Never reset the API key, balance or their storage.
 
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
+Stored rotation remains absolute intrinsic Euler XYZ in degrees, preserving old
+files and explicit update.rotation. Relative rotate must compose quaternions around
+fixed world X, then Y, then Z (right-hand rule), never add Euler components. Reuse
+the validated rotateAngles helper for the property panel: its rotation inputs are
+zero-based increments, reset after Applica. This prevents X/Z control fusion at
+Y=±90° gimbal lock. Equivalent stored angles can change together; do not reinterpret
+old JSON. Rotation preserves object positions and each object's own pivot; do not
+silently introduce an assembly/group pivot.
 Batches apply to a copy and remain atomic. Check schemas/references/object/tool/size
 bounds after each operation; check editable-hole pairs on the completed batch.
 Temporary tools may be linked, consumed or grouped before rendering. Each subtract must
@@ -86,7 +94,7 @@ without rejected raw output or unexecuted operations. Pending turns are excluded
 Current state/selection override historical references after manual edits/undo.
 Never persist chat to localStorage or project files; reset when opening JSON/examples.
 
-Selected-object fields edit name/color, center XYZ, Euler XYZ and type-specific
+Selected-object fields edit name/color, center XYZ, relative world rotation and type-specific
 dimensions, including imported/cut meshes and editable holes. Keep IDs/type/groups/
 vertices out of the form and lock originally planar mesh axes. Applica emits one
 update via applyOperations and prepare/commit, preserving IDs and undo/redo.

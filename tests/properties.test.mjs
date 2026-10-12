@@ -5,6 +5,7 @@ import { applyOperations } from '../public/js/project.js';
 import { emptyProject, History } from '../public/js/state.js';
 import { geometryFor } from '../public/js/geometry.js';
 import { evaluatedGeometry } from '../public/js/boolean.js';
+import * as THREE from 'three';
 
 class Element extends EventTarget {
   constructor(tag){super();this.tagName=tag;this.children=[];this.value='';this.disabled=false;this.attributes={};}
@@ -156,4 +157,19 @@ test('Profilo non valido e piegatura ripiegata non modificano la scena tramite A
   editor.inputs['profile.1.0'].value='0';submit();assert.ok(error.textContent);assert.equal(calls(),0);
   editor.render(object);editor.inputs['modifiers.0.angle'].value='180';submit();assert.ok(error.textContent);assert.equal(calls(),0);
   assert.deepEqual(history.current.objects[0],object);assert.equal(history.canUndo,false);
+});
+
+test('Nel pannello X e Z sono distinti anche con Y a 90 gradi; i campi sono incrementi globali azzerati dopo Applica',()=>{
+  const object={...box,rotation:[0,90,0]},x=setup(object),z=setup(object);
+  const initial=[x,z].map(env=>['x','y','z'].map(axis=>env.editor.inputs['rotation.'+axis].value));
+  x.editor.inputs['rotation.x'].value='30';x.submit();z.editor.inputs['rotation.z'].value='30';z.submit();
+  assert.equal(x.error.textContent,'');assert.equal(z.error.textContent,'');
+  const quaternion=o=>new THREE.Quaternion().setFromEuler(new THREE.Euler(...o.rotation.map(THREE.MathUtils.degToRad),'XYZ'));
+  const base=quaternion(object),expectedX=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),Math.PI/6).multiply(base),expectedZ=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI/6).multiply(base);
+  assert.ok(1-Math.abs(quaternion(x.history.current.objects[0]).dot(expectedX))<1e-10);
+  assert.ok(1-Math.abs(quaternion(z.history.current.objects[0]).dot(expectedZ))<1e-10);
+  assert.ok(Math.abs(quaternion(x.history.current.objects[0]).dot(quaternion(z.history.current.objects[0])))<.99);
+  assert.deepEqual(initial,[['0','0','0'],['0','0','0']]);
+  assert.deepEqual(['x','y','z'].map(axis=>x.editor.inputs['rotation.'+axis].value),['0','0','0']);
+  x.submit();assert.equal(x.calls(),1);assert.deepEqual(x.history.undo().objects[0],object);
 });
