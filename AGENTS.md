@@ -41,6 +41,12 @@ manually or for errors; no CoderDojo switch. Keep key/Cancella/balance beside th
 brand, no project title in the header, toolbar immediately below and compact prompt.
 The chat separator supports pointer capture and keyboard, adapts to available
 viewport space and exposes ARIA values. Its height is not persisted.
+Enter sends; Shift+Enter inserts a newline. Ignore composition/IME Enter events
+and block duplicate requests while busy. Pending replies show animated dots with
+an accessible status, no visible waiting text, and respect reduced-motion settings.
+Remove the indicator on both success and error. Nuovo clears scene, selection,
+chat/context, prompt, undo/redo and view; confirm before discarding scene/chat/draft/
+history, and block while busy. Never reset the API key, balance or their storage.
 
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
 Batches apply to a copy and remain atomic. Check schemas/references/object/tool/size

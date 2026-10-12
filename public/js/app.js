@@ -24,11 +24,10 @@ function message(text,error=false) { $('status').textContent=text; $('status').c
 function setBusy(value) {
   busy=value;
   propertyEditor.setBusy(value);
-  for(const id of ['run','open','save','export','import-stl','deepseek-key','clear-key','object-hole']) $(id).disabled=value;
+  for(const id of ['run','new','open','save','export','import-stl','deepseek-key','clear-key','object-hole']) $(id).disabled=value;
   document.querySelectorAll('[data-example]').forEach(b=>b.disabled=value);
   $('undo').disabled=value||!history.canUndo; $('redo').disabled=value||!history.canRedo;
   $('command-form').setAttribute('aria-busy',String(value));
-  $('run').textContent=value ? 'Elaborazione…' : 'Invia ↗';
 }
 function node(tag,text,className) { const n=document.createElement(tag); if(text!==undefined) n.textContent=text; if(className) n.className=className; return n; }
 function select(id) { selectedId=id; view.select(id); renderObjects(); }
@@ -76,7 +75,7 @@ async function execute() {
   const before=history.current;
   const messages=chat.messages();
   const turn=chat.start(prompt);
-  setBusy(true); message('DeepSeek sta interpretando il comando…');
+  setBusy(true); message('');
   try {
     const modelJson=await interpretDeepSeek(prompt,before,selectedId,{
       key:$('deepseek-key').value,
@@ -140,7 +139,16 @@ catch(error) {
 }
 setupChatResize($('editor'),$('chat'),$('chat-resizer'));
 $('command-form').addEventListener('submit',e=>{ e.preventDefault(); execute(); });
-$('prompt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)) { e.preventDefault(); execute(); } });
+$('prompt').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&e.keyCode!==229) { e.preventDefault(); execute(); } });
+$('new').addEventListener('click',()=>{
+  if(busy) return;
+  const hasWork=history.current.objects.length||history.canUndo||history.canRedo||chat.turns.length||$('prompt').value.trim();
+  if(hasWork&&!confirm('Hai salvato il progetto? Nuovo cancellerà la scena, la chat e Annulla/Ripristina.')) return;
+  try {
+    commit(emptyProject(),true); chat.reset(); $('prompt').value=''; view.frame();
+    keyStatus(); $('prompt').focus();
+  } catch(error) { message(error.message,true); }
+});
 $('undo').addEventListener('click',()=>{ history.undo(); render(); message('Ultima modifica annullata.'); });
 $('redo').addEventListener('click',()=>{ history.redo(); render(); message('Modifica ripristinata.'); });
 $('object-hole').addEventListener('change',()=>{

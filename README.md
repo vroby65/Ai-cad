@@ -73,7 +73,8 @@ The .env.example file belongs only to the archived PHP backend.
 
 ## Model and navigate
 
-Write in the chat input and press **Invia** or **Ctrl+Enter**. Examples:
+Write in the chat input and press **Enter** or **Invia**. **Shift+Enter** adds a
+line break. Examples:
 
 - `Disegna un cubo rosso di 100 mm.` — draw a red 100 mm cube.
 - `Aggiungi un cilindro sopra il cubo.` — add a cylinder above it.
@@ -140,6 +141,10 @@ manifold output, printability or mechanical precision. Solids are not fused.
 
 ## Files, history and chat
 
+- **Nuovo** starts an empty project, clears selection, chat/context, prompt and
+  undo/redo, and resets the view. Confirm before discarding an existing scene,
+  conversation, draft or history. The API key and credit remain unchanged.
+  This button is disabled during AI requests and file loads.
 - **Salva JSON / Apri JSON** preserve mesh vertices, groups and tools. Maximum **8 MiB**.
 - **Importa STL** adds ASCII/binary STL without replacing the scene. Maximum
   **10 MiB / 20000 triangles**. Coordinates are preserved; units are interpreted
@@ -163,6 +168,9 @@ pairs. It stays in memory and resets when opening a JSON file or starter project
 The current command, selection and compact state are sent last and take priority
 after manual edits, undo/redo or STL import. Mesh vertices and rejected raw output
 are omitted. The key is never included in this context.
+While DeepSeek responds, three animated dots replace the waiting text. An accessible
+status label remains available; reduced-motion preferences disable the animation.
+The indicator disappears on success or error.
 
 Select a part in the scene or object list, open **Oggetti** if needed, and edit its
 name, color, center XYZ, Euler rotation XYZ or dimensions in the sidebar. Press

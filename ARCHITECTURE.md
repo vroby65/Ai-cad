@@ -56,6 +56,10 @@ user/assistant pairs (at most forty), trimming older whole pairs to a 128 KiB UT
 budget. Conversation summaries omit operations/vertices; they are historical context,
 not commands. Current compact state and selection are sent last and are authoritative
 after manual edits, undo/redo or imports. Chat memory is not saved to files/storage.
+Pending chat replies show three animated dots with an accessible status label;
+completion/failure hides the indicator and shows the reply. Reduced-motion users
+receive a static indicator. Enter submits the prompt, Shift+Enter keeps a newline,
+and composition/IME events do not submit. The busy guard prevents duplicate sends.
 
 The client has a 60-second timeout and 512 KiB streamed-response limit, with no
 redirects or automatic retries. Provider bodies are not exposed as error details.
@@ -150,6 +154,9 @@ before STLLoader runs; nonfinite/out-of-range coordinates are rejected.
 Files are local browser downloads/uploads; no client filename becomes a server path.
 Imports are atomic and undoable. Opening JSON starts new project history.
 Forty cloned snapshots retain undo/redo; a new edit discards the redo branch.
+Nuovo prepares an empty scene and resets history, chat/context, selection, prompt
+and camera. Existing scene/chat/draft/undo data require confirmation; cancellation
+changes nothing. A busy request/load blocks it. Account storage and credit stay intact.
 
 ## Account and layout
 

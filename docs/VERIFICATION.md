@@ -5,7 +5,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**98 tests passed** with npm test. The suite covers:
+**102 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -48,6 +48,14 @@ no PHP. Tests do not use real keys or paid API requests.
   errors, timeout and bounded streamed responses.
 - Simulated DOM chat: safe text, bubbles, detailed operations, raw JSON, errors,
   forty-turn cap and reset.
+- Pending chat animation: three status dots without visible waiting text; success
+  and failure hide the indicator. Reduced-motion styling is provided; visual
+  animation timing has not been verified in a real browser.
+- Actual app event handlers with simulated DOM/account/fetch and a stub WebGL view:
+  Enter submits once, Shift+Enter and IME/composition do not submit. Nuovo confirms
+  existing work, cancellation preserves it, and acceptance clears model/selection/
+  chat/context/draft/undo/redo while keeping the key and unrelated storage. Busy
+  requests block resets; the next command receives an empty model/conversation.
 - Conversation memory: clarification replies, stable affected IDs, pending-turn
   exclusion, failures marked unapplied, whole recent pairs within a 128 KiB UTF-8
   budget, strict roles and unchanged caller data. Rejected raw JSON is not sent.

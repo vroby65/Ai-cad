@@ -58,3 +58,11 @@ test('La memoria conserva chiarimenti e ID applicati, esclude richieste in corso
   messages[0].content='changed';assert.equal(chat.messages()[0].content,'Crea un cubo');
   chat.reset();assert.deepEqual(chat.messages(),[]);
 });
+
+test('Attesa animata senza testo visibile; fine e errore nascondono l’indicatore',()=>{
+  const {chat}=setup(),turn=chat.start('Crea un cubo');
+  assert.equal(turn.reply.textContent,'');assert.equal(turn.reply.hidden,true);
+  assert.equal(turn.loading.className,'chat-typing');assert.equal(turn.loading.children.length,3);assert.equal(turn.loading.attributes.role,'status');assert.ok(turn.loading.attributes['aria-label']);
+  assert.equal(turn.loading.hidden,false);chat.complete(turn,reply,'Fatto');assert.equal(turn.loading.hidden,true);assert.equal(turn.reply.hidden,false);
+  const failed=chat.start('Altro');chat.fail(failed,'Errore');assert.equal(failed.loading.hidden,true);assert.equal(failed.reply.hidden,false);assert.equal(failed.reply.textContent,'Errore');
+});

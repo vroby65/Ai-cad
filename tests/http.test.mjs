@@ -13,6 +13,9 @@ test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   assert.match(html,/id="deepseek-key" type="password"/);
   assert.match(html,/id="deepseek-balance"/);
   assert.match(html,/id="clear-key"/);
+  assert.match(html,/<button id="new"[^>]*aria-label="Nuovo progetto"/);
+  assert.equal(html.includes('Ctrl + Invio'),false);
+  assert.match(html,/Invio · Maiusc \+ Invio: a capo/);
   assert.match(html,/id="chat-messages" role="log"/);
   assert.match(html,/id="object-hole" type="checkbox"/);
   assert.equal(html.includes('id="activity-list"'),false);
