@@ -1,9 +1,9 @@
-# DeepCAD JSON contract — browser client, version 1
+# AIcad JSON contract — browser client, version 1
 
 The interpreter returns only:
 
 ~~~json
-{"message":"Explanation in Italian","operations":[]}
+{"message":"Explanation in English","operations":[]}
 ~~~
 
 No extra fields, code or Markdown. message is a nonblank string of 1–6000 characters.
@@ -198,7 +198,7 @@ with groupId:null earlier in the same batch does not trigger editable preview ch
 before they are linked or consumed. Final editable holes still respect their own pair limit.
 
 ~~~json
-{"message":"Scavo il cubo con un foro passante.","operations":[
+{"message":"Cutting a through-hole in the cube.","operations":[
   {"op":"create","object":{
     "id":"hole-1","type":"cylinder","name":"Drill tool",
     "dimensions":{"radius":10,"height":120},
@@ -266,51 +266,41 @@ Rendering scales base vertices relative to their extents. Import preserves world
 coordinates by storing the original bounding-box center in position.
 The archived PHP backend does not support mesh/hole/subtract extensions.
 
-## DeepSeek HTTP contract
+## AI gateway HTTP contract
 
-Official POST https://api.deepseek.com/chat/completions, Authorization Bearer and
-Content-Type application/json. Model is always deepseek-flash. Payload fields:
-model, thinking:{"type":"disabled"}, messages (system, prior user/assistant pairs, current user), response_format:{"type":"json_object"}, max_tokens:8192,
-stream:false. No PHP endpoint, application proxy or selectable model.
+The browser uses the configured URL:port as its base, appending `/v1/models` and
+`/v1/responses`. A trailing `/v1` is removed before appending routes. Requests send
+Authorization: Bearer with the user's gateway key; cookies, referrers and redirects
+are omitted. The key never enters JSON bodies or geometry state.
 
-The final user message is serialized JSON containing command, selectedId and project.
-Command is 1–2000 characters; selection is null or an existing object ID.
-Mesh context omits vertices and adds triangleCount. This compact context is not
-a saveable project. Mesh vertices are never sent.
+Models may use the ChatGPT-plan `{models:[{slug,visibility,display_name}]}` catalog
+or the OpenAI-compatible `{data:[{id}]}` catalog. The first visible model is used.
+There is no model selector and no fixed DeepSeek model or balance endpoint.
 
-Previous user messages contain their prompts. Internal assistant memory uses
-{message,applied,objectIds}, converted before sending into labeled plain-text
-explanation, historical outcome and involved IDs. It is not sent as a JSON response
-template. The reported metadata-shaped 2CV response is rejected; the output must
-contain operations, with no applied/objectIds. Explanations/clarifications and stable
-IDs persist; executable operations and rejected raw output are omitted. Failed
-requests are labeled as errors with no changes. At most 40 whole pairs within 128 KiB UTF-8 are sent,
-keeping the most recent pairs. Current project/selection override historical context.
-Conversation is session-only and resets when a JSON file or example opens.
-See [DeepSeek's multi-round guide](https://api-docs.deepseek.com/guides/multi_round_chat).
+POST payload: `{model,instructions,input,store:false,stream:false}`. Instructions
+contain the English CAD contract. Input contains bounded prior user/assistant pairs
+followed by serialized `{command,selectedId,project}` context. Commands contain
+1–2000 characters. Mesh vertices are omitted and triangleCount added.
+Internal `{message,applied,objectIds}` memory is converted to labeled plain text;
+it never becomes a response template. Current state and selection are authoritative.
+At most 40 whole pairs within 128 KiB UTF-8 are sent, without persisting chat.
 
-The property panel uses the same update schema, with absolute values for name,
-color, position and dimensions. Its rotation inputs are additional world-axis
-turns (zero-initialized); rotateAngles computes an absolute rotation for the update
-and clears those inputs after application. Applica creates a single atomic, undoable
-batch locally, without calling DeepSeek. It cannot change IDs/type/groups/vertices.
-For profiled objects it also edits reference point coordinates; for modified
-objects it edits existing modifier axes/angles/factors. Point/modifier counts
-are changed through chat operations. Geometry failures leave the scene unchanged.
+The Pi gateway sets upstream store:false and stream:true and returns
+`{model,output_text}` only after completed inference. output_text must contain
+validated CAD JSON. Compatibility chat envelopes require finish_reason:stop;
+truncated, empty, oversized, malformed and metadata-shaped output is rejected.
+Model instructions, operation explanations and app-owned messages are English.
 
-A complete choices[0].finish_reason:"stop" and string message.content are required.
-Thinking is explicitly disabled; the provider's default is enabled, as documented
-in [Thinking Mode](https://api-docs.deepseek.com/guides/thinking_mode/).
-finish_reason:"length" and empty content are rejected with distinct errors. Diagnostic
-events include finish reason and token usage, but never reasoning_content or headers.
-The raw content reaches the chat before validation; invalid/truncated content is
-kept as safe text, with no changes applied. The explanation is displayed only
-after successful execution. Forty exchanges remain in the current session.
+Timeouts: 10 seconds for catalog, 270 seconds for inference; maximum 512 KiB for
+HTTP responses. No retries or redirects. Provider bodies and credentials are not
+included in error messages. Diagnostic output is redacted and stays local.
 
-Timeout: 60 seconds. Streamed response maximum: 512 KiB. Redirects/retries are
-disabled. Provider errors become bounded local messages; private body details and
-keys are not exposed. The browser must receive a CORS permission from DeepSeek.
+The gateway must allow CORS for the app origin, including OPTIONS, Authorization
+and Content-Type. HTTP LAN access from a public HTTPS page also depends on browser
+local-network permission; unsupported browsers require local app serving or a
+trusted HTTPS gateway. The gateway remains in the LAN.
 
-The account uses official GET https://api.deepseek.com/user/balance, with the same
-Authorization-only key handling, ten-second timeout and bounded JSON validation.
-Key storage/removal and credit are separate from CAD state and exported files.
+The property panel emits the existing atomic update schema locally, preserving
+IDs/type/groups/vertices. Rotation inputs remain relative world-axis increments
+composed into absolute Euler XYZ storage. Opening JSON/examples resets chat; New
+clears scene, selection, draft, history and camera, preserving URL and key.

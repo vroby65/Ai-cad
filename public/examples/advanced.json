@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "name": "Forme complesse",
+  "name": "Complex shapes",
   "units": "mm",
   "objects": [
     {
       "id": "vase",
       "type": "lathe",
-      "name": "Vaso sagomato",
+      "name": "Shaped vase",
       "dimensions": {
         "radius": 38,
         "height": 110
@@ -53,7 +53,7 @@
     {
       "id": "vase-hole",
       "type": "cylinder",
-      "name": "Cavità del vaso",
+      "name": "Vase cavity",
       "dimensions": {
         "radius": 16,
         "height": 100
@@ -78,7 +78,7 @@
     {
       "id": "tower",
       "type": "extrude",
-      "name": "Torre ritorta",
+      "name": "Twisted tower",
       "dimensions": {
         "x": 40,
         "y": 40,
@@ -146,7 +146,7 @@
     {
       "id": "arch",
       "type": "box",
-      "name": "Maniglia curva",
+      "name": "Curved handle",
       "dimensions": {
         "x": 10,
         "y": 15,
@@ -175,7 +175,7 @@
     {
       "id": "ring",
       "type": "torus",
-      "name": "Anello",
+      "name": "Ring",
       "dimensions": {
         "radius": 32,
         "tube": 10
@@ -196,7 +196,7 @@
     {
       "id": "wing",
       "type": "extrude",
-      "name": "Ala sagomata",
+      "name": "Shaped wing",
       "dimensions": {
         "x": 75,
         "y": 25,

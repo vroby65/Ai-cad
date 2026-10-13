@@ -12,21 +12,21 @@ function pointsFor(profile,type) {
   return type==='extrude' && profile.length>1 && profile[0].every((n,i)=>n===profile.at(-1)[i]) ? profile.slice(0,-1) : profile;
 }
 export function validateProfile(profile,type) {
-  if(!Array.isArray(profile) || profile.length>64 || profile.length<(type==='extrude'?3:2)) throw new Error('Profilo: usa da 3 a 64 punti per estrudere, da 2 a 64 per la rivoluzione.');
-  for(const p of profile) if(!Array.isArray(p) || p.length!==2 || p.some(n=>typeof n!=='number'||!Number.isFinite(n)||Math.abs(n)>10000)) throw new Error('Profilo: ogni punto contiene due numeri finiti in mm, entro ±10000.');
+  if(!Array.isArray(profile) || profile.length>64 || profile.length<(type==='extrude'?3:2)) throw new Error('Profile: use 3–64 points for extrusion, 2–64 for revolution.');
+  for(const p of profile) if(!Array.isArray(p) || p.length!==2 || p.some(n=>typeof n!=='number'||!Number.isFinite(n)||Math.abs(n)>10000)) throw new Error('Profile: each point contains two finite numbers in mm, within ±10000.');
   const points=pointsFor(profile,type),xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
-  if(points.length<(type==='extrude'?3:2) || Math.max(...ys)-Math.min(...ys)<1e-6 || Math.max(...ys)-Math.min(...ys)>10000) throw new Error('Profilo: altezza nulla o fuori limite.');
-  for(let i=1;i<points.length;i++) if(points[i].every((n,j)=>n===points[i-1][j])) throw new Error('Profilo: punti consecutivi duplicati.');
+  if(points.length<(type==='extrude'?3:2) || Math.max(...ys)-Math.min(...ys)<1e-6 || Math.max(...ys)-Math.min(...ys)>10000) throw new Error('Profile: height is zero or out of bounds.');
+  for(let i=1;i<points.length;i++) if(points[i].every((n,j)=>n===points[i-1][j])) throw new Error('Profile: duplicate consecutive points.');
   if(type==='lathe') {
-    if(Math.max(...xs)<=0 || xs.some(r=>r<0) || points.some((p,i)=>i>0&&p[1]<points[i-1][1]) || points.some((p,i)=>i>0&&i<points.length-1&&p[0]===0)) throw new Error('Rivoluzione: raggi non negativi, interni positivi e quote Z in ordine crescente.');
+    if(Math.max(...xs)<=0 || xs.some(r=>r<0) || points.some((p,i)=>i>0&&p[1]<points[i-1][1]) || points.some((p,i)=>i>0&&i<points.length-1&&p[0]===0)) throw new Error('Revolution: radii must be nonnegative, interior radii positive, and Z coordinates increasing.');
     return;
   }
-  if(Math.max(...xs)-Math.min(...xs)<1e-6 || Math.max(...xs)-Math.min(...xs)>10000) throw new Error('Profilo: larghezza nulla o fuori limite.');
+  if(Math.max(...xs)-Math.min(...xs)<1e-6 || Math.max(...xs)-Math.min(...xs)>10000) throw new Error('Profile: width is zero or out of bounds.');
   const area=points.reduce((sum,p,i)=>sum+p[0]*points[(i+1)%points.length][1]-p[1]*points[(i+1)%points.length][0],0);
-  if(Math.abs(area)<1e-8) throw new Error('Profilo: area nulla.');
+  if(Math.abs(area)<1e-8) throw new Error('Profile: zero area.');
   for(let i=0;i<points.length;i++) for(let j=i+1;j<points.length;j++) {
     if(j===i+1 || (i===0&&j===points.length-1)) continue;
-    if(intersects(points[i],points[(i+1)%points.length],points[j],points[(j+1)%points.length])) throw new Error('Profilo auto-intersecante: riordina i punti lungo il contorno.');
+    if(intersects(points[i],points[(i+1)%points.length],points[j],points[(j+1)%points.length])) throw new Error('Self-intersecting profile: reorder points along the contour.');
   }
 }
 export function profileGeometry(object) {

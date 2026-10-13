@@ -9,7 +9,7 @@ export class PropertyEditor {
       if(!this.object || this.fields.disabled) return;
       try {
         const changes=this.changes();
-        if(!Object.keys(changes).length) { this.error.textContent='Nessun valore modificato.'; return; }
+        if(!Object.keys(changes).length) { this.error.textContent='No values changed.'; return; }
         this.onApply({op:'update',id:this.object.id,changes});
         this.error.textContent='';
       } catch(error) { this.error.textContent=error.message; }
@@ -32,24 +32,24 @@ export class PropertyEditor {
     this.object=object ? structuredClone(object) : null; this.inputs={};
     this.fields.replaceChildren(); this.error.textContent=''; this.setBusy(busy);
     if(!object) return;
-    this.fields.append(this.input('name','Nome','text',object.name),this.input('color','Colore','color',object.color));
-    for(const [key,title,values,limit] of [['position','Centro · mm',object.position,100000],['rotation','Ruota di · ° (assi della griglia)',[0,0,0],36000]]) {
+    this.fields.append(this.input('name','Name','text',object.name),this.input('color','Color','color',object.color));
+    for(const [key,title,values,limit] of [['position','Center · mm',object.position,100000],['rotation','Rotate by · ° (world axes)',[0,0,0],36000]]) {
       const group=this.node('fieldset'),row=this.node('div'); row.className='property-vector';
       group.append(this.node('legend',title));
       for(const [i,axis] of ['x','y','z'].entries()) row.append(this.input(key+'.'+axis,axis.toUpperCase(),'number',values[i],-limit,limit));
       group.append(row);
-      if(key==='rotation') group.append(this.node('small','Incrementi X → Y → Z. Applica ruota il pezzo; i campi tornano a zero.'));
+      if(key==='rotation') group.append(this.node('small','Increments X → Y → Z. Apply rotates the part; the fields reset to zero.'));
       this.fields.append(group);
     }
-    const group=this.node('fieldset'); group.append(this.node('legend','Dimensioni · mm'));
-    const labels={x:'X · larghezza',y:'Y · profondità',z:'Z · altezza',radius:'Raggio',height:'Altezza',tube:'Raggio tubo'};
+    const group=this.node('fieldset'); group.append(this.node('legend','Dimensions · mm'));
+    const labels={x:'X · width',y:'Y · depth',z:'Z · height',radius:'Radius',height:'Height',tube:'Tube radius'};
     for(const [key,value] of Object.entries(object.dimensions)) {
       const planar=object.type==='mesh' && value===0;
       group.append(this.input('dimensions.'+key,labels[key],'number',value,object.type==='mesh'?0:.1,planar?0:10000,planar));
     }
     this.fields.append(group);
     if(object.profile) {
-      const details=this.node('details'),points=this.node('div');details.append(this.node('summary','Profilo di riferimento · mm'),this.node('p','Le dimensioni scalano il profilo.'));
+      const details=this.node('details'),points=this.node('div');details.append(this.node('summary','Reference profile · mm'),this.node('p','Dimensions scale the profile.'));
       for(const [i,point] of object.profile.entries()) {
         const row=this.node('div');row.className='property-vector';
         for(let j=0;j<2;j++) row.append(this.input(`profile.${i}.${j}`,`${i+1} · ${object.type==='lathe' ? ['R','Z'][j] : ['X','Y'][j]}`,'number',point[j],object.type==='lathe'&&j===0?0:-10000,10000));
@@ -59,10 +59,10 @@ export class PropertyEditor {
     }
     for(const [i,m] of (object.modifiers||[]).entries()) {
       const group=this.node('fieldset'),parameter=m.type==='taper'?'factor':'angle';
-      group.append(this.node('legend',`${i+1} · ${{twist:'Torsione',bend:'Piegatura',taper:'Rastremazione'}[m.type]}`),this.input(`modifiers.${i}.axis`,'Asse','select',m.axis),this.input(`modifiers.${i}.${parameter}`,parameter==='angle'?'Angolo · °':'Fattore finale','number',m[parameter],parameter==='factor'?.05:m.type==='bend'?-180:-720,parameter==='factor'?4:m.type==='bend'?180:720));
+      group.append(this.node('legend',`${i+1} · ${{twist:'Twist',bend:'Bend',taper:'Taper'}[m.type]}`),this.input(`modifiers.${i}.axis`,'Axis','select',m.axis),this.input(`modifiers.${i}.${parameter}`,parameter==='angle'?'Angle · °':'End factor','number',m[parameter],parameter==='factor'?.05:m.type==='bend'?-180:-720,parameter==='factor'?4:m.type==='bend'?180:720));
       this.fields.append(group);
     }
-    const button=this.node('button','Applica'); button.type='submit'; button.className='property-apply';
+    const button=this.node('button','Apply'); button.type='submit'; button.className='property-apply';
     this.fields.append(button);
   }
   setBusy(busy) { this.fields.disabled=busy; }
@@ -74,7 +74,7 @@ export class PropertyEditor {
       const [field,axis,parameter]=key.split('.');
       if(field==='modifiers' && parameter==='axis') {values.modifiers[axis].axis=input.value;continue;}
       if(input.type!=='number') continue;
-      if(!input.value.trim() || !Number.isFinite(Number(input.value))) throw new Error('Inserisci un numero valido in tutti i campi.');
+      if(!input.value.trim() || !Number.isFinite(Number(input.value))) throw new Error('Enter a valid number in every field.');
       if(field==='dimensions') values.dimensions[axis]=Number(input.value);
       else if(field==='profile') values.profile[axis][parameter]=Number(input.value);
       else if(field==='modifiers') values.modifiers[axis][parameter]=Number(input.value);

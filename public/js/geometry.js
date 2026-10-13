@@ -28,6 +28,6 @@ function baseGeometry(object) {
       g.scale(size.x ? d.x/size.x : 1,size.y ? d.y/size.y : 1,size.z ? d.z/size.z : 1);
       g.computeVertexNormals(); return g;
     }
-    default: throw new Error('Primitiva sconosciuta.');
+    default: throw new Error('Unknown primitive.');
   }
 }

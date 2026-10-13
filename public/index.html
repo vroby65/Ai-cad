@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="DeepCAD: un laboratorio di modellazione 3D conversazionale per imparare creando.">
-  <title>DeepCAD · Immagina, descrivi, costruisci</title>
+  <meta name="description" content="AIcad: a conversational 3D modeling lab. Imagine, describe and build.">
+  <title>AIcad · Imagine, describe, build</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%2362c7a5' d='m32 3 27 15v29L32 62 5 47V18z'/%3E%3Cpath fill='none' stroke='%23101826' stroke-width='4' d='m5 18 27 15 27-15M32 33v29'/%3E%3C/svg%3E">
   <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
   <script type="module" src="js/app.js"></script>
@@ -12,54 +12,56 @@
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="DeepCAD, pagina iniziale"><svg viewBox="0 0 36 38" aria-hidden="true"><path d="m18 2 15 8v18l-15 8-15-8V10zM3 10l15 9 15-9M18 19v17"/></svg><span>Deep<span class="accent">CAD</span><small>IL TUO LABORATORIO 3D</small></span></a>
-    <section class="credentials" aria-label="Configurazione DeepSeek">
-      <div class="key-field"><label for="deepseek-key" class="sr-only">Chiave API DeepSeek</label><div class="key-input"><input id="deepseek-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Chiave API DeepSeek" aria-describedby="key-note"><button id="clear-key" type="button" title="Cancella la chiave API salvata">Cancella</button></div></div>
-      <output id="deepseek-balance" aria-live="polite">Credito: —</output>
-      <p id="key-note" class="sr-only">Chiave salvata in questo browser · usa Cancella per dimenticarla.</p>
+    <a class="brand" href="./" aria-label="AIcad home"><svg viewBox="0 0 36 38" aria-hidden="true"><path d="m18 2 15 8v18l-15 8-15-8V10zM3 10l15 9 15-9M18 19v17"/></svg><span>AI<span class="accent">cad</span><small>YOUR 3D MODELING LAB</small></span></a>
+    <section class="credentials" aria-label="AI gateway settings">
+      <div class="url-field"><label for="gateway-url" class="sr-only">Gateway URL:port</label><input id="gateway-url" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="2048" placeholder="Gateway URL:port" aria-describedby="gateway-note"></div>
+      <div class="key-field"><label for="api-key" class="sr-only">Gateway API key</label><div class="key-input"><input id="api-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Gateway API key" aria-describedby="key-note"><button id="clear-key" type="button" title="Clear the saved API key">Clear</button></div></div>
+      <output id="gateway-status" aria-live="polite">Gateway: not connected</output>
+      <p id="gateway-note" class="sr-only">Enter your gateway address. Allow local network access if your browser asks.</p>
+      <p id="key-note" class="sr-only">Key saved in this browser · use Clear to forget it.</p>
     </section>
   </header>
-  <nav class="toolbar" aria-label="Strumenti del progetto">
-    <div class="tools"><button id="toggle-panel" aria-controls="sidebar" aria-expanded="true" title="Mostra o nascondi il pannello">☷ <span>Oggetti</span></button><span class="divider"></span><button id="undo" disabled>↶ <span>Annulla</span></button><button id="redo" disabled>↷ <span>Ripristina</span></button></div>
-    <div class="tools"><button id="new" aria-label="Nuovo progetto" title="Nuovo progetto">＋ <span>Nuovo</span></button><button id="save">↓ <span>Salva JSON</span></button><button id="open">↥ <span>Apri JSON</span></button><button id="import-stl">↥ <span>Importa STL</span></button><button id="export" class="export-button">◇ <span>Esporta STL</span></button></div>
+  <nav class="toolbar" aria-label="Project tools">
+    <div class="tools"><button id="toggle-panel" aria-controls="sidebar" aria-expanded="true" title="Show or hide the object panel">☷ <span>Objects</span></button><span class="divider"></span><button id="undo" disabled>↶ <span>Undo</span></button><button id="redo" disabled>↷ <span>Redo</span></button></div>
+    <div class="tools"><button id="new" aria-label="New project" title="New project">＋ <span>New</span></button><button id="save">↓ <span>Save JSON</span></button><button id="open">↥ <span>Open JSON</span></button><button id="import-stl">↥ <span>Import STL</span></button><button id="export" class="export-button">◇ <span>Export STL</span></button></div>
     <input id="file" type="file" accept=".json,application/json" hidden>
     <input id="stl-file" type="file" accept=".stl,model/stl,application/sla" hidden>
   </nav>
   <main class="workspace" id="workspace">
     <aside id="sidebar" class="sidebar">
-      <div class="side-heading"><h2>La tua scena</h2><span id="object-count" class="count">0</span></div>
-      <div id="objects" class="object-list"><p class="muted">La scena è vuota. Parti da un’idea.</p></div>
-      <section id="properties" class="properties" hidden><h3>Oggetto selezionato</h3><dl id="property-list"></dl><form id="property-form"><fieldset id="property-fields"></fieldset><output id="property-error" role="status" aria-live="polite"></output></form><label id="hole-control" class="hole-control" hidden><input id="object-hole" type="checkbox">Forma foro · sottrae materiale</label></section>
-      <section class="examples"><div class="eyebrow">IMPARA CREANDO</div><h2>Un punto di partenza</h2><p>Esplora un progetto, poi fallo tuo.</p>
-        <button data-example="house"><span class="example-icon">⌂</span><span>Una casetta<small>Forme, dimensioni e posizione</small></span><span>↗</span></button>
-        <button data-example="robot"><span class="example-icon">♙</span><span>Un piccolo robot<small>Simmetria e primitive</small></span><span>↗</span></button>
-        <button data-example="car"><span class="example-icon">▱</span><span>Un’automobile<small>Rotazione e gruppi</small></span><span>↗</span></button>
-        <button data-example="advanced"><span class="example-icon">∿</span><span>Forme complesse<small>Profili, curve e deformazioni</small></span><span>↗</span></button>
+      <div class="side-heading"><h2>Your scene</h2><span id="object-count" class="count">0</span></div>
+      <div id="objects" class="object-list"><p class="muted">The scene is empty. Start with an idea.</p></div>
+      <section id="properties" class="properties" hidden><h3>Selected object</h3><dl id="property-list"></dl><form id="property-form"><fieldset id="property-fields"></fieldset><output id="property-error" role="status" aria-live="polite"></output></form><label id="hole-control" class="hole-control" hidden><input id="object-hole" type="checkbox">Hole tool · removes material</label></section>
+      <section class="examples"><div class="eyebrow">LEARN BY MAKING</div><h2>A starting point</h2><p>Explore a project, then make it your own.</p>
+        <button data-example="house"><span class="example-icon">⌂</span><span>A small house<small>Shapes, dimensions and position</small></span><span>↗</span></button>
+        <button data-example="robot"><span class="example-icon">♙</span><span>A small robot<small>Symmetry and primitives</small></span><span>↗</span></button>
+        <button data-example="car"><span class="example-icon">▱</span><span>A car<small>Rotation and groups</small></span><span>↗</span></button>
+        <button data-example="advanced"><span class="example-icon">∿</span><span>Complex shapes<small>Profiles, curves and deformations</small></span><span>↗</span></button>
       </section>
-      <div class="side-note"><span class="status-dot"></span>1 unità = 1 millimetro<br><small>Modellatore didattico · MVP</small></div>
+      <div class="side-note"><span class="status-dot"></span>1 unit = 1 millimeter<br><small>Educational mesh modeler</small></div>
     </aside>
-    <section class="editor" id="editor" aria-label="Laboratorio di modellazione">
+    <section class="editor" id="editor" aria-label="Modeling lab">
       <div class="viewport-wrap">
-        <div class="view-label"><span class="status-dot"></span>PROSPETTIVA <span class="view-unit">/ mm</span></div>
-        <button id="frame" class="frame-button" title="Inquadra tutti gli oggetti">⌖ Inquadra</button>
-        <div id="viewport" aria-label="Scena 3D interattiva"></div>
-        <div id="welcome" class="welcome"><div class="welcome-cube">◇</div><h1>Ogni forma inizia<br>con un’idea.</h1><p>Descrivila qui sotto.<br>Costruiamola insieme, un comando alla volta.</p></div>
-        <div class="view-help">Trascina per ruotare <span>·</span> Rotella per zoom <span>·</span> Tasto destro per spostare</div>
+        <div class="view-label"><span class="status-dot"></span>PERSPECTIVE <span class="view-unit">/ mm</span></div>
+        <button id="frame" class="frame-button" title="Fit all objects">⌖ Fit view</button>
+        <div id="viewport" aria-label="Interactive 3D scene"></div>
+        <div id="welcome" class="welcome"><div class="welcome-cube">◇</div><h1>Every shape begins<br>with an idea.</h1><p>Describe it below.<br>Build it together, one command at a time.</p></div>
+        <div class="view-help">Drag to rotate <span>·</span> Scroll to zoom <span>·</span> Right-drag to pan</div>
         <div class="axis-key"><span class="x">X</span><span class="y">Y</span><span class="z">Z ↑</span></div>
       </div>
-      <div id="chat-resizer" class="chat-resizer" role="separator" tabindex="0" aria-label="Regola l’altezza della chat" aria-orientation="horizontal" aria-controls="chat" title="Trascina per regolare la chat · frecce su/giù per ridimensionare"></div>
-      <section class="chat" id="chat" aria-label="Chat con DeepSeek">
-        <div class="chat-heading"><h2>Parla con DeepSeek</h2><span>FLASH · CAD IN MILLIMETRI</span></div>
-        <details id="diagnostics" class="diagnostics"><summary>Diagnostica · <span id="diagnostic-count">0</span> eventi</summary><div><button id="download-log" type="button">Scarica log</button><button id="clear-log" type="button">Cancella log</button><small>Log senza chiave API. Scaricali prima di ricaricare; su localhost il raccoglitore locale può conservarli automaticamente.</small></div><pre id="diagnostic-output"></pre></details>
-        <div id="chat-messages" role="log" aria-label="Messaggi della chat" aria-live="polite" aria-relevant="additions text"><p class="chat-empty">Descrivi una forma: qui troverai la risposta di DeepSeek e i dettagli delle modifiche.</p></div>
+      <div id="chat-resizer" class="chat-resizer" role="separator" tabindex="0" aria-label="Adjust chat height" aria-orientation="horizontal" aria-controls="chat" title="Drag to resize chat · use up/down arrow keys"></div>
+      <section class="chat" id="chat" aria-label="AI chat">
+        <div class="chat-heading"><h2>Talk to AI</h2><span>DESCRIBE · BUILD · REFINE</span></div>
+        <details id="diagnostics" class="diagnostics"><summary>Diagnostics · <span id="diagnostic-count">0</span> events</summary><div><button id="download-log" type="button">Download log</button><button id="clear-log" type="button">Clear log</button><small>Logs omit the API key. Download them before reloading; the optional local collector can save them on localhost.</small></div><pre id="diagnostic-output"></pre></details>
+        <div id="chat-messages" role="log" aria-label="Chat messages" aria-live="polite" aria-relevant="additions text"><p class="chat-empty">Describe a shape: the AI response and change details will appear here.</p></div>
         <div class="prompt-area">
-          <label for="prompt" class="sr-only">Il tuo messaggio</label>
-          <form id="command-form"><textarea id="prompt" rows="1" maxlength="2000" placeholder="Scrivi a DeepSeek… ad esempio: Disegna un cubo rosso di 100 mm." required></textarea><button type="submit" id="run">Invia <span>↗</span></button></form>
-          <div class="prompt-footer"><span id="status" role="status" aria-live="polite">Inserisci la chiave API DeepSeek nel campo in alto.</span><span class="shortcut">Invio · Maiusc + Invio: a capo</span></div>
+          <label for="prompt" class="sr-only">Your message</label>
+          <form id="command-form"><textarea id="prompt" rows="1" maxlength="2000" placeholder="Describe a shape… for example: Draw a red 100 mm cube." required></textarea><button type="submit" id="run">Send <span>↗</span></button></form>
+          <div class="prompt-footer"><span id="status" role="status" aria-live="polite">Enter the gateway URL:port and API key at the top.</span><span class="shortcut">Enter to send · Shift + Enter: new line</span></div>
         </div>
       </section>
     </section>
   </main>
-  <noscript>Attiva JavaScript per usare il visualizzatore 3D.</noscript>
+  <noscript>Enable JavaScript to use the 3D viewer.</noscript>
 </body>
 </html>

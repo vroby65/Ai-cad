@@ -24,7 +24,7 @@ test('I log sono limitati, isolati dai dati originali e cancellabili',()=>{
 
 test('Errori delle operazioni e della geometria identificano esattamente il pezzo rifiutato',()=>{
   const box={id:'body',name:'Corpo',type:'box',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
-  assert.throws(()=>applyOperations(emptyProject(),{operations:[{op:'create',object:box},{op:'update',id:'body',changes:{dimensions:{x:20,y:30}}}]}),/Operazione 2.*body.*z/);
+  assert.throws(()=>applyOperations(emptyProject(),{operations:[{op:'create',object:box},{op:'update',id:'body',changes:{dimensions:{x:20,y:30}}}]}),/Operation 2.*body.*z/);
   const project={...emptyProject(),objects:[{...box,modifiers:[{type:'bend',axis:'z',angle:180}]}]};
-  assert.throws(()=>CadView.prototype.prepare.call({meshes:new Map()},project),/Geometria.*body.*Piegatura/);
+  assert.throws(()=>CadView.prototype.prepare.call({meshes:new Map()},project),/Geometry.*body.*Bend/);
 });

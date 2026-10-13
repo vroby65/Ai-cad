@@ -20,8 +20,8 @@ const response=()=>new Response(JSON.stringify({choices:[{finish_reason:'stop',m
 let instance=0;
 async function setup(t){
   const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
-  const storage=new Map([['deepcad.deepseek-key','fake-test-key'],['unrelated','keep']]),requests=[];
-  const env={get,storage,requests,confirmations:0,accept:true,hold:false,reply:response};let release;
+  const storage=new Map([['aicad.api-key','fake-test-key'],['aicad.gateway-url','https://gateway.example'],['unrelated','keep']]),requests=[];
+  const env={get,storage,requests,gatewayRequests:[],confirmations:0,accept:true,hold:false,reply:response};let release;
   const window=new EventTarget();
   t.after(async()=>{if(release){release();await env.idle();}window.dispatchEvent(new Event('pagehide'));});
   const globals={document:{getElementById:get,createElement:()=>new Element(),querySelectorAll:()=>[]},window,ResizeObserver:class{observe(){}},matchMedia:()=>({matches:false}),localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},confirm:()=>{env.confirmations++;return env.accept;}};
@@ -30,7 +30,8 @@ async function setup(t){
     t.after(()=>{if(existed)globalThis[key]=previous;else delete globalThis[key];});
   }
   t.mock.method(globalThis,'fetch',async(url,options)=>{
-    if(url.endsWith('/user/balance'))return new Response(JSON.stringify({is_available:true,balance_infos:[{currency:'USD',total_balance:'1.00'}]}));
+    env.gatewayRequests.push({url,authorization:options.headers.Authorization});
+    if(url.endsWith('/models'))return new Response(JSON.stringify({models:[{slug:'test-model',visibility:'list'}]}));
     requests.push(JSON.parse(options.body));
     if(env.hold)return new Promise(resolve=>{release=()=>resolve(env.reply());});
     return env.reply();
@@ -40,6 +41,7 @@ async function setup(t){
   let source=await readFile(new URL('../public/js/app.js',import.meta.url),'utf8');
   source=source.replace(/from '\.\/([^']+)'/g,(_,name)=>`from '${name==='renderer.js'?view:new URL('../public/js/'+name,import.meta.url).href}'`);
   await import('data:text/javascript;base64,'+Buffer.from(source+'\n// instance '+instance++).toString('base64'));
+  await new Promise(resolve=>setTimeout(resolve,10));
   env.release=()=>release();
   env.submit=()=>get('command-form').dispatchEvent(new Event('submit',{cancelable:true}));
   env.key=properties=>{const event=new Event('keydown',{cancelable:true});Object.assign(event,{key:'Enter',...properties});get('prompt').dispatchEvent(event);return event;};
@@ -58,8 +60,8 @@ test('Nuovo chiede conferma, può annullarsi e azzera scena, selezione, chat, bo
   env.accept=false;get('new').click();assert.equal(env.confirmations,1);assert.equal(get('object-count').textContent,'1');assert.equal(get('prompt').value,'Bozza');assert.equal(get('undo').disabled,false);
   env.accept=true;get('new').click();assert.equal(env.confirmations,2);assert.equal(get('object-count').textContent,'0');assert.equal(get('properties').hidden,true);assert.equal(get('welcome').hidden,false);
   assert.equal(get('undo').disabled,true);assert.equal(get('redo').disabled,true);assert.equal(get('prompt').value,'');assert.equal(get('prompt').focused,true);
-  assert.equal(get('chat-messages').children[0].className,'chat-empty');assert.equal(get('deepseek-key').value,'fake-test-key');assert.equal(env.storage.get('unrelated'),'keep');assert.equal(env.storage.get('deepcad.deepseek-key'),'fake-test-key');
-  get('prompt').value='Crea un cubo';env.submit();await env.idle();const payload=env.requests.at(-1);assert.equal(payload.messages.length,2);const context=JSON.parse(payload.messages.at(-1).content);assert.equal(context.selectedId,null);assert.deepEqual(context.project.objects,[]);
+  assert.equal(get('chat-messages').children[0].className,'chat-empty');assert.equal(get('api-key').value,'fake-test-key');assert.equal(env.storage.get('unrelated'),'keep');assert.equal(env.storage.get('aicad.api-key'),'fake-test-key');
+  get('prompt').value='Crea un cubo';env.submit();await env.idle();const payload=env.requests.at(-1);assert.equal(payload.input.length,1);const context=JSON.parse(payload.input.at(-1).content);assert.equal(context.selectedId,null);assert.deepEqual(context.project.objects,[]);
 });
 test('Nuovo non cancella una richiesta in corso; un progetto vuoto si apre senza conferma',async t=>{
   const env=await setup(t),{get}=env;get('new').click();assert.equal(env.confirmations,0);assert.equal(get('object-count').textContent,'0');
@@ -75,11 +77,26 @@ test('Un comando fallito lascia log leggibili e scaricabili senza chiave; il suc
   assert.equal(get('object-count').textContent,'0');assert.equal(get('diagnostics').open,true);
   const raw=get('diagnostic-output').textContent,log=JSON.parse(raw);
   assert.ok(log.entries.some(e=>e.stage==='response'&&e.data.finishReason==='length'));
-  assert.match(raw,/troncata/);assert.doesNotMatch(raw,/fake-test-key|private-reasoning/);
+  assert.match(raw,/truncated/);assert.doesNotMatch(raw,/fake-test-key|private-reasoning/);
   let download;t.mock.method(URL,'createObjectURL',blob=>{download=blob;return 'blob:test';});get('download-log').click();
   assert.deepEqual(JSON.parse(await download.text()),log);
   env.reply=response;env.submit();await env.idle();assert.equal(get('object-count').textContent,'1');
   assert.ok(JSON.parse(get('diagnostic-output').textContent).entries.some(e=>e.stage==='applied'));
   get('clear-log').click();assert.equal(JSON.parse(get('diagnostic-output').textContent).entries.length,0);
-  assert.equal(get('deepseek-key').value,'fake-test-key');
+  assert.equal(get('api-key').value,'fake-test-key');
+});
+
+
+test('Changing gateway URL retargets requests; Clear forgets only the key',async t=>{
+  const env=await setup(t),{get,storage}=env;
+  get('gateway-url').value='https://other-gateway.example';
+  get('gateway-url').dispatchEvent(new Event('input'));
+  assert.equal(storage.get('aicad.gateway-url'),'https://other-gateway.example');
+  get('prompt').value='Draw a cube';env.submit();await env.idle();
+  assert.ok(env.gatewayRequests.some(r=>r.url==='https://other-gateway.example/v1/responses'&&r.authorization==='Bearer fake-test-key'));
+  get('clear-key').click();
+  assert.equal(get('api-key').value,'');assert.equal(storage.has('aicad.api-key'),false);
+  assert.equal(get('gateway-url').value,'https://other-gateway.example');
+  assert.equal(storage.get('unrelated'),'keep');
+  assert.equal(get('gateway-status').textContent,'Gateway: not connected');
 });

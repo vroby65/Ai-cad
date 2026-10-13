@@ -105,7 +105,7 @@ test('Modificare dimensioni e centro di un foro aggiorna lo scavo e si annulla',
 });
 test('Una risposta breve usa il chiarimento precedente e lo stato modificato nel pannello',async t=>{
   const {ChatView}=await import('../public/js/chat.js');
-  const {interpretDeepSeek}=await import('../public/js/api.js');
+  const {interpretAI}=await import('../public/js/api.js');
   const chat=new ChatView(new Element('div'),document);
   const turn=chat.start('Sposta il corpo dopo averlo allargato');
   chat.complete(turn,{message:'Di quanti millimetri lo sposto lungo X?',operations:[]},'Nessuna operazione');
@@ -115,9 +115,9 @@ test('Una risposta breve usa il chiarimento precedente e lo stato modificato nel
     payload=JSON.parse(options.body);
     return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify({message:'Sposto il corpo di 10 mm lungo X.',operations:[{op:'translate',ids:['body'],delta:[10,0,0]}]})}}]}));
   });
-  const reply=await interpretDeepSeek('Di 10 mm',history.current,'body',{key:'test-key',messages:chat.messages()});
-  assert.match(payload.messages[2].content,/Di quanti millimetri lo sposto lungo X\?/);
-  const context=JSON.parse(payload.messages.at(-1).content);assert.equal(context.selectedId,'body');
+  const reply=await interpretAI('Di 10 mm',history.current,'body',{key:'test-key',url:'https://gateway.example',model:'test-model',messages:chat.messages()});
+  assert.match(payload.input[1].content,/Di quanti millimetri lo sposto lungo X\?/);
+  const context=JSON.parse(payload.input.at(-1).content);assert.equal(context.selectedId,'body');
   assert.equal(context.project.objects[0].dimensions.x,120);assert.equal(context.project.objects[0].position[0],50);
   const updated=applyOperations(history.current,{operations:reply.operations});assert.deepEqual(updated.objects[0].position,[60,0,30]);
 });
@@ -151,7 +151,7 @@ test('Profilo e parametri di deformazione si modificano nel pannello mantenendo 
   history.undo();assert.equal(history.current.objects[0].modifiers[0].axis,'z');history.undo();assert.deepEqual(history.current.objects[0],object);
 });
 
-test('Profilo non valido e piegatura ripiegata non modificano la scena tramite Applica',()=>{
+test('Profilo non valido e piegatura ripiegata non modificano la scena tramite Apply',()=>{
   const object={...box,type:'extrude',profile:[[0,0],[100,0],[100,80],[0,80]],modifiers:[{type:'bend',axis:'z',angle:10}]};
   const {editor,history,submit,error,calls}=setup(object);
   editor.inputs['profile.1.0'].value='0';submit();assert.ok(error.textContent);assert.equal(calls(),0);
@@ -159,7 +159,7 @@ test('Profilo non valido e piegatura ripiegata non modificano la scena tramite A
   assert.deepEqual(history.current.objects[0],object);assert.equal(history.canUndo,false);
 });
 
-test('Nel pannello X e Z sono distinti anche con Y a 90 gradi; i campi sono incrementi globali azzerati dopo Applica',()=>{
+test('Nel pannello X e Z sono distinti anche con Y a 90 gradi; i campi sono incrementi globali azzerati dopo Apply',()=>{
   const object={...box,rotation:[0,90,0]},x=setup(object),z=setup(object);
   const initial=[x,z].map(env=>['x','y','z'].map(axis=>env.editor.inputs['rotation.'+axis].value));
   x.editor.inputs['rotation.x'].value='30';x.submit();z.editor.inputs['rotation.z'].value='30';z.submit();

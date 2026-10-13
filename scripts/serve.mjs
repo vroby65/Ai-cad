@@ -22,6 +22,6 @@ export function createStaticServer() {
 }
 if(process.argv[1] && resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const server=createStaticServer();
-  server.on('error',error=>{console.error('Impossibile avviare il server locale:',error.message);process.exit(1);});
-  server.listen(8000,'127.0.0.1',()=>console.log('DeepCAD: http://127.0.0.1:8000'));
+  server.on('error',error=>{console.error('Unable to start the local server:',error.message);process.exit(1);});
+  server.listen(8000,'127.0.0.1',()=>console.log('AIcad: http://127.0.0.1:8000'));
 }

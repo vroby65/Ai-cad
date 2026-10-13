@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "name": "Un piccolo robot",
+  "name": "A small robot",
   "units": "mm",
   "objects": [
     {
       "id": "body",
       "type": "box",
-      "name": "Corpo",
+      "name": "Body",
       "dimensions": {
         "x": 90,
         "y": 50,
@@ -28,7 +28,7 @@
     {
       "id": "head",
       "type": "box",
-      "name": "Testa",
+      "name": "Head",
       "dimensions": {
         "x": 80,
         "y": 60,
@@ -50,7 +50,7 @@
     {
       "id": "neck",
       "type": "cylinder",
-      "name": "Collo",
+      "name": "Neck",
       "dimensions": {
         "radius": 12,
         "height": 10
@@ -71,7 +71,7 @@
     {
       "id": "eye-left",
       "type": "sphere",
-      "name": "Occhio sinistro",
+      "name": "Left eye",
       "dimensions": {
         "radius": 8
       },
@@ -91,7 +91,7 @@
     {
       "id": "eye-right",
       "type": "sphere",
-      "name": "Occhio destro",
+      "name": "Right eye",
       "dimensions": {
         "radius": 8
       },
@@ -111,7 +111,7 @@
     {
       "id": "mouth",
       "type": "box",
-      "name": "Sorriso",
+      "name": "Smile",
       "dimensions": {
         "x": 24,
         "y": 3,
@@ -133,7 +133,7 @@
     {
       "id": "arm-left",
       "type": "cylinder",
-      "name": "Braccio sinistro",
+      "name": "Left arm",
       "dimensions": {
         "radius": 10,
         "height": 80
@@ -154,7 +154,7 @@
     {
       "id": "arm-right",
       "type": "cylinder",
-      "name": "Braccio destro",
+      "name": "Right arm",
       "dimensions": {
         "radius": 10,
         "height": 80
@@ -175,7 +175,7 @@
     {
       "id": "leg-left",
       "type": "cylinder",
-      "name": "Gamba sinistra",
+      "name": "Left leg",
       "dimensions": {
         "radius": 12,
         "height": 40
@@ -196,7 +196,7 @@
     {
       "id": "leg-right",
       "type": "cylinder",
-      "name": "Gamba destra",
+      "name": "Right leg",
       "dimensions": {
         "radius": 12,
         "height": 40
@@ -217,7 +217,7 @@
     {
       "id": "foot-left",
       "type": "box",
-      "name": "Piede sinistro",
+      "name": "Left foot",
       "dimensions": {
         "x": 35,
         "y": 65,
@@ -239,7 +239,7 @@
     {
       "id": "foot-right",
       "type": "box",
-      "name": "Piede destro",
+      "name": "Right foot",
       "dimensions": {
         "x": 35,
         "y": 65,
@@ -282,7 +282,7 @@
     {
       "id": "antenna-tip",
       "type": "sphere",
-      "name": "Punta antenna",
+      "name": "Antenna tip",
       "dimensions": {
         "radius": 7
       },

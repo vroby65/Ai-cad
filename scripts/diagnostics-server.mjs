@@ -20,7 +20,7 @@ export function createDiagnosticsServer(directory) {
         bytes+=chunk.length;if(bytes>768*1024) throw Object.assign(new Error(),{status:413});chunks.push(chunk);
       }
       const data=JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      if(data.app!=='DeepCAD'||data.version!==1||!Array.isArray(data.entries)||data.entries.length>100) throw new Error();
+      if(data.app!=='AIcad'||data.version!==1||!Array.isArray(data.entries)||data.entries.length>100) throw new Error();
       const log=new Diagnostics();
       for(const entry of data.entries) {
         if(typeof entry.stage!=='string'||entry.stage.length>64||typeof entry.time!=='string'||entry.time.length>40||!Number.isFinite(Date.parse(entry.time))||!entry.data||typeof entry.data!=='object'||Array.isArray(entry.data))throw new Error();
@@ -41,5 +41,5 @@ export function createDiagnosticsServer(directory) {
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)) {
   const directory=fileURLToPath(new URL('../.local/logs/',import.meta.url)),server=createDiagnosticsServer(directory);
   server.on('error',error=>{console.error('Raccolta log non disponibile:',error.code);process.exit(1);});
-  server.listen(8001,'127.0.0.1',()=>console.log('DeepCAD: raccolta log locale attiva sulla porta 8001.'));
+  server.listen(8001,'127.0.0.1',()=>console.log('AIcad: local log collection running on port 8001.'));
 }

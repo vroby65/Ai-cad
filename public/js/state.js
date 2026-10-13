@@ -1,4 +1,4 @@
-export const emptyProject = () => ({version:1,name:'Nuovo progetto',units:'mm',objects:[],groups:[]});
+export const emptyProject = () => ({version:1,name:'New project',units:'mm',objects:[],groups:[]});
 const copy = value => structuredClone(value);
 export class History {
   constructor(state, limit=40) { this.limit=limit; this.reset(state); }

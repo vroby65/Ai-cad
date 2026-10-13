@@ -32,12 +32,12 @@ function toCSG(geometry) {
 }
 function fromCSG(csg) {
   const triangles=csg.polygons.reduce((count,polygon)=>count+polygon.vertices.length-2,0);
-  if(triangles>MAX_BOOLEAN_TRIANGLES) throw new Error('Scavo troppo complesso: massimo 20000 triangoli per pezzo.');
+  if(triangles>MAX_BOOLEAN_TRIANGLES) throw new Error('Cut too complex: maximum 20000 triangles per part.');
   const positions=[],normals=[];
   for(const polygon of csg.polygons) for(let i=2;i<polygon.vertices.length;i++) {
     for(const vertex of [polygon.vertices[0],polygon.vertices[i-1],polygon.vertices[i]]) {
       const p=vertex.pos,n=vertex.normal;
-      if(![p.x,p.y,p.z,n.x,n.y,n.z].every(Number.isFinite)) throw new Error('Scavo non valido. Modifica posizione o dimensioni della forma foro.');
+      if(![p.x,p.y,p.z,n.x,n.y,n.z].every(Number.isFinite)) throw new Error('Invalid cut. Change the hole tool position or dimensions.');
       positions.push(p.x,p.y,p.z); normals.push(n.x,n.y,n.z);
     }
   }
@@ -63,13 +63,13 @@ function subtractGeometry(object,holes,requireCut=false) {
   const inverse=transform(object).invert(); let result=null;
   try {
     const originalVolume=requireCut || object.type==='mesh' ? volume(base) : 0;
-    if(requireCut && (!originalVolume || (object.type==='mesh' && Object.values(object.dimensions).some(n=>n===0)))) throw new Error('Lo scavo richiede un solido con volume: usa uno STL chiuso, non una superficie piana.');
+    if(requireCut && (!originalVolume || (object.type==='mesh' && Object.values(object.dimensions).some(n=>n===0)))) throw new Error('Cutting requires a solid with volume: use a closed STL, not a planar surface.');
     for(const hole of holes) {
       const cutter=geometryFor(hole);
       try {
         cutter.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inverse,transform(hole))); cutter.computeBoundingBox();
         if(!base.boundingBox.intersectsBox(cutter.boundingBox)) continue;
-        if(object.type==='mesh' && (!originalVolume || Object.values(object.dimensions).some(n=>n===0))) throw new Error('Lo scavo richiede una mesh chiusa con volume, non una superficie piana.');
+        if(object.type==='mesh' && (!originalVolume || Object.values(object.dimensions).some(n=>n===0))) throw new Error('Cutting requires a closed mesh with volume, not a planar surface.');
         result=(result??toCSG(base)).subtract(toCSG(cutter));
         if(!result.polygons.length) break;
       } finally { cutter.dispose(); }
@@ -77,11 +77,11 @@ function subtractGeometry(object,holes,requireCut=false) {
     if(result) {
       const geometry=fromCSG(result);
       if(requireCut && originalVolume-volume(geometry)<=Math.max(1e-9,originalVolume*1e-8)) {
-        geometry.dispose(); throw new Error('Le forme foro non rimuovono materiale dal solido. Controlla posizione e dimensioni.');
+        geometry.dispose(); throw new Error('Hole tools do not remove material from the solid. Check position and dimensions.');
       }
       base.dispose(); return geometry;
     }
-    if(requireCut) throw new Error('Nessuna intersezione tra le forme foro e il solido: nessun materiale rimosso.');
+    if(requireCut) throw new Error('No intersection between hole tools and the solid: no material removed.');
     return base;
   } catch(error) { base.dispose(); throw error; }
 }

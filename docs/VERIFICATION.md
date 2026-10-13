@@ -1,5 +1,26 @@
 # Verification report
 
+## AIcad update — 13 October 2026
+
+- Rebranded the active app as AIcad; UI labels, accessibility text, errors,
+  model instructions, operation explanations and starter-project names are English.
+- Added separate gateway URL:port and API-key storage. Clearing the key preserves
+  the URL and unrelated storage; old DeepSeek keys are not reused.
+- Catalog and Responses requests target the selected gateway, with account model
+  discovery and the existing atomic CAD validation. No paid requests were made.
+- `npm test`: 140 passed. JavaScript syntax checks and `git diff --check` passed.
+- DOM tests cover URL retargeting, Clear, Enter/IME behavior, chat, errors and
+  geometry; transport tests use fake credentials and mock model responses.
+- Pi gateway tests: five passed, including restricted browser origins and
+  preflight, plus a bounded 512 KiB request budget for CAD conversation context. Live LAN preflight for the Pages origin returned 204; an untrusted
+  origin returned 403. No router, Tor, SSH or firewall settings were changed.
+- Browser runtime reported no connected browsers, so visual/WebGL and actual
+  browser local-network permission checks remain unverified.
+- Gateway OAuth is still pending: real model inference, Plus permissions and
+  actual token renewal are not confirmed by the simulated tests.
+
+## Earlier DeepCAD verification notes
+
 Checked on 12 October 2026 using Node.js 24.21.0 on Linux. The active app requires
 no PHP. Tests do not use real keys or paid API requests.
 

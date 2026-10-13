@@ -8,7 +8,7 @@ import {encodeProject,decodeProject} from '../public/js/files.js';
 import {exportSTL} from '../public/js/export.js';
 import {importSTL} from '../public/js/import.js';
 import {CadView} from '../public/js/renderer.js';
-import {interpretDeepSeek} from '../public/js/api.js';
+import {interpretAI} from '../public/js/api.js';
 import {explain} from '../public/js/explain.js';
 import {readFile} from 'node:fs/promises';
 
@@ -44,17 +44,17 @@ test('Profili auto-intersecanti, piatti, fuori limite e rivoluzioni non valide s
   assert.throws(()=>create({...extrusion,code:'alert(1)'}));
   assert.throws(()=>create({...base,type:'torus',dimensions:{radius:10,tube:10}}));
 });
-test('Torsione produce vere superfici intermedie, conserva volume e si annulla',()=>{
+test('Twist produce vere superfici intermedie, conserva volume e si annulla',()=>{
   const original=state(base),twisted=deform(base,[{type:'twist',axis:'z',angle:90}]);assert.equal(twisted.objects[0].type,'box');assert.deepEqual(base.dimensions,{x:20,y:10,z:100});
   const g=geometryFor(twisted.objects[0]);finite(g);assert.ok(g.getAttribute('position').count>36);near(volume(twisted),20000,.006);g.dispose();
   const history=new History(original);history.commit(twisted);assert.deepEqual(history.undo(),original);assert.deepEqual(history.redo(),twisted);
   const reset=applyOperations(twisted,{operations:[{op:'deform',id:'shape',modifiers:[]}]});near(volume(reset),20000,.0001);
 });
-test('Piegatura di 180 gradi forma un arco con volume conservato e normali finite',()=>{
+test('Bend di 180 gradi forma un arco con volume conservato e normali finite',()=>{
   const rod={...base,dimensions:{x:10,y:10,z:100}},bent=deform(rod,[{type:'bend',axis:'z',angle:180}]);const g=geometryFor(bent.objects[0]);g.computeBoundingBox();near(g.boundingBox.max.x,100/Math.PI,.005);near(volume(bent),10000,.006);finite(g);g.dispose();
   const xRod={...rod,dimensions:{x:100,y:10,z:10}},xBent=deform(xRod,[{type:'bend',axis:'x',angle:180}]);const xg=geometryFor(xBent.objects[0]);xg.computeBoundingBox();near(xg.boundingBox.max.y,100/Math.PI,.005);xg.dispose();
 });
-test('Rastremazione ha il volume di un tronco di piramide e mantiene i parametri originali',()=>{
+test('Taper ha il volume di un tronco di piramide e mantiene i parametri originali',()=>{
   const box={...base,dimensions:{x:100,y:80,z:120}},result=deform(box,[{type:'taper',axis:'z',factor:.5}]);near(volume(result),960000*(1+.5+.25)/3,.002);assert.deepEqual(result.objects[0].dimensions,box.dimensions);
 });
 test('Deformazioni concatenate persistono nel JSON e producono STL reimportabile',()=>{
@@ -68,7 +68,7 @@ test('Una mesh STL sparsa viene suddivisa prima di deformarla e conserva i verti
 });
 test('Piegature ripiegate, modificatori fuori schema e batch invalidi restano atomici',()=>{
   for(const modifiers of [[{type:'bend',axis:'z',angle:181}],[{type:'twist',axis:'q',angle:90}],[{type:'taper',axis:'z',factor:0}],[{type:'twist',axis:'z',angle:'90'}],[{type:'twist',axis:'z',angle:90,code:'alert(1)'}],Array(7).fill({type:'twist',axis:'z',angle:90})])assert.throws(()=>deform(base,modifiers));
-  const wide={...base,dimensions:{x:100,y:100,z:100}};assert.throws(()=>deform(wide,[{type:'bend',axis:'z',angle:180}]),/pieg|raggio|ripiega/i);
+  const wide={...base,dimensions:{x:100,y:100,z:100}};assert.throws(()=>deform(wide,[{type:'bend',axis:'z',angle:180}]),/bend|radius|fold/i);
   const source=state(base),copy=structuredClone(source);assert.throws(()=>applyOperations(source,{operations:[{op:'deform',id:'shape',modifiers:[{type:'twist',axis:'z',angle:90}]},{op:'delete',ids:['missing']}]}));assert.deepEqual(source,copy);
 });
 test('Aggiornare un profilo o una deformazione invalida la geometria ma conserva la mesh per ID',()=>{
@@ -84,7 +84,7 @@ test('Fori modificabili lavorano sui profili complessi e la finalizzazione non r
 test('L’AI può creare profili e deformarli con JSON controllato, senza fornire codice o vertici',async t=>{
   let payload;const reply={message:'Creo un vaso sagomato e lo rastremo.',operations:[{op:'create',object:lathe},{op:'deform',id:'shape',modifiers:[{type:'taper',axis:'z',factor:.8}]}]};
   t.mock.method(globalThis,'fetch',async(url,options)=>{payload=JSON.parse(options.body);return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(reply)}}]}));});
-  const parsed=await interpretDeepSeek('Crea un vaso sofisticato rastremato',emptyProject(),null,{key:'test-key'});assert.match(payload.messages[0].content,/extrude/);assert.match(payload.messages[0].content,/lathe/);assert.match(payload.messages[0].content,/deform/);assert.equal(applyOperations(emptyProject(),{operations:parsed.operations}).objects[0].modifiers[0].factor,.8);
+  const parsed=await interpretAI('Crea un vaso sofisticato rastremato',emptyProject(),null,{key:'test-key',url:'https://gateway.example',model:'test-model'});assert.match(payload.instructions,/extrude/);assert.match(payload.instructions,/lathe/);assert.match(payload.instructions,/deform/);assert.equal(applyOperations(emptyProject(),{operations:parsed.operations}).objects[0].modifiers[0].factor,.8);
 });
 
 test('Deformare solidi e utensili conserva scavi modificabili e finalizza senza doppie deformazioni',()=>{
@@ -101,7 +101,7 @@ test('Budget triangoli ed estensioni deformate proteggono anche STL e batch atom
   const large={...base,dimensions:{x:5000,y:5000,z:100}};
   assert.throws(()=>deform(large,[{type:'taper',axis:'z',factor:4}]),/10000/);
   const flat={...base,type:'mesh',vertices:[-5,-5,0,5,-5,0,-5,5,0],dimensions:{x:10,y:10,z:0}};
-  assert.throws(()=>deform(flat,[{type:'bend',axis:'z',angle:45}]),/nulla/);
+  assert.throws(()=>deform(flat,[{type:'bend',axis:'z',angle:45}]),/zero/);
   const source=importSTL(exportSTL(state({...base,type:'sphere',dimensions:{radius:10}})).buffer,'sphere.stl','shape');
   assert.throws(()=>deform(source,Array(6).fill({type:'twist',axis:'z',angle:90})),/20000/);
   assert.equal('modifiers' in source,false);
@@ -109,9 +109,9 @@ test('Budget triangoli ed estensioni deformate proteggono anche STL e batch atom
 
 test('Spiegazioni dei nuovi parametri sono leggibili e non mostrano oggetti JavaScript',()=>{
   const text=explain({op:'update',id:'shape',changes:{profile:extrusion.profile,modifiers:[{type:'bend',axis:'z',angle:45}]}});
-  assert.match(text,/6 punti/);assert.match(text,/piegatura.*Z.*45°/);assert.doesNotMatch(text,/object Object/);
+  assert.match(text,/6 reference points/);assert.match(text,/bend.*Z.*45°/);assert.doesNotMatch(text,/object Object/);
   const created=explain({op:'create',object:{...extrusion,modifiers:[{type:'twist',axis:'z',angle:90}]}});
-  assert.match(created,/6 punti/);assert.match(created,/torsione.*Z.*90°/);
+  assert.match(created,/6 points/);assert.match(created,/twist.*Z.*90°/);
 });
 
 test('Il progetto Forme complesse si apre e produce un STL con profili, deformazioni e scavo reale',async()=>{

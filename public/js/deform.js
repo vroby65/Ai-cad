@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import { MAX_BOOLEAN_TRIANGLES } from './limits.js';
 
 export function validateModifiers(modifiers) {
-  if(!Array.isArray(modifiers) || modifiers.length>6) throw new Error('Deformazioni: massimo 6 modificatori.');
+  if(!Array.isArray(modifiers) || modifiers.length>6) throw new Error('Deformations: maximum 6 modifiers.');
   for(const m of modifiers) {
     const parameter=m?.type==='taper' ? 'factor' : 'angle';
-    if(!m || Object.getPrototypeOf(m)!==Object.prototype || Object.keys(m).length!==3 || !['twist','bend','taper'].includes(m.type) || !['x','y','z'].includes(m.axis) || !Object.hasOwn(m,parameter)) throw new Error('Deformazione non autorizzata: usa type, axis e angle/factor.');
+    if(!m || Object.getPrototypeOf(m)!==Object.prototype || Object.keys(m).length!==3 || !['twist','bend','taper'].includes(m.type) || !['x','y','z'].includes(m.axis) || !Object.hasOwn(m,parameter)) throw new Error('Invalid deformation: use type, axis and angle/factor.');
     const value=m[parameter],limit=m.type==='bend'?180:720;
-    if(typeof value!=='number'||!Number.isFinite(value)||(m.type==='taper' ? value<.05||value>4 : Math.abs(value)>limit)) throw new Error('Deformazione fuori limite: torsione ±720°, piegatura ±180°, rastremazione 0.05–4.');
+    if(typeof value!=='number'||!Number.isFinite(value)||(m.type==='taper' ? value<.05||value>4 : Math.abs(value)>limit)) throw new Error('Deformation out of bounds: twist ±720°, bend ±180°, taper 0.05–4.');
   }
 }
 function clip(polygon,axis,bound,above) {
@@ -31,7 +31,7 @@ function subdivide(geometry,axis,origin,step,steps=24) {
   function emit(triangle) {
     const [a,b,c]=triangle.map(v=>new THREE.Vector3(...v.p));
     if(new THREE.Vector3().crossVectors(b.sub(a),c.sub(a)).lengthSq()<1e-20) return;
-    if(positions.length/9>=MAX_BOOLEAN_TRIANGLES) throw new Error('Deformazione troppo complessa: massimo 20000 triangoli. Riduci la complessità della mesh.');
+    if(positions.length/9>=MAX_BOOLEAN_TRIANGLES) throw new Error('Deformation too complex: maximum 20000 triangles. Reduce mesh complexity.');
     for(const vertex of triangle){positions.push(...vertex.p);normals.push(...vertex.n);}
   }
   for(let i=0;i<count;i+=3) {
@@ -60,9 +60,9 @@ export function applyModifiers(geometry,modifiers=[]) {
       const axis=['x','y','z'].indexOf(m.axis),u=(axis+1)%3,v=(axis+2)%3;
       current.computeBoundingBox(); const min=current.boundingBox.min.toArray(),max=current.boundingBox.max.toArray();
       const length=max[axis]-min[axis],center=min.map((n,i)=>(n+max[i])/2);
-      if(length<1e-6) throw new Error('L’asse della deformazione ha estensione nulla.');
+      if(length<1e-6) throw new Error('The deformation axis has zero extent.');
       const angle=THREE.MathUtils.degToRad(m.angle||0),radius=length/angle;
-      if(m.type==='bend' && (max[u]-min[u])/2>=Math.abs(radius)*.95) throw new Error('Piegatura troppo stretta: il solido si ripiega. Riduci l’angolo o lo spessore.');
+      if(m.type==='bend' && (max[u]-min[u])/2>=Math.abs(radius)*.95) throw new Error('Bend too tight: the solid folds over. Reduce angle or thickness.');
       if(m.type==='twist') for(const transverse of [u,v]) {
         const width=max[transverse]-min[transverse];
         if(width>1e-6) current=subdivide(current,transverse,min[transverse],width/4,4);
@@ -89,12 +89,12 @@ export function applyModifiers(geometry,modifiers=[]) {
           }
         }
         const unit=new THREE.Vector3(...normal).normalize();
-        if(point.some(value=>!Number.isFinite(value)||Math.abs(value)>10000) || !unit.toArray().every(Number.isFinite)) throw new Error('Deformazione fuori dai limiti geometrici di 10000 mm.');
+        if(point.some(value=>!Number.isFinite(value)||Math.abs(value)>10000) || !unit.toArray().every(Number.isFinite)) throw new Error('Deformation exceeds the 10000 mm geometry bounds.');
         p.setXYZ(i,...point);n.setXYZ(i,...unit.toArray());
       }
       p.needsUpdate=true;n.needsUpdate=true;
       current.computeBoundingBox();
-      if(current.boundingBox.getSize(new THREE.Vector3()).toArray().some(size=>size>10000)) throw new Error('Deformazione troppo grande: massimo 10000 mm per asse.');
+      if(current.boundingBox.getSize(new THREE.Vector3()).toArray().some(size=>size>10000)) throw new Error('Deformation too large: maximum 10000 mm per axis.');
     }
     current.computeBoundingBox();current.computeBoundingSphere();return current;
   } catch(error) { current.dispose();throw error; }

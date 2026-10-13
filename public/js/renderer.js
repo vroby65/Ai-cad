@@ -21,7 +21,7 @@ function prepareChanges(project,meshes) {
     for(const object of project.objects) {
       try {
         if(meshes.get(object.id)?.userData.geometry!==geometrySignature(object,project)) prepared.set(object.id,evaluatedGeometry(object,project));
-      } catch(error) { throw new Error(`Geometria ${object.name} (${object.id}): ${error.message}`,{cause:error}); }
+      } catch(error) { throw new Error(`Geometry ${object.name} (${object.id}): ${error.message}`,{cause:error}); }
     }
     return prepared;
   } catch(error) { prepared.forEach(geometry=>geometry.dispose()); throw error; }

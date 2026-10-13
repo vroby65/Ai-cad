@@ -1,1 +1,1 @@
-{"name":"deepcad","private":true,"type":"module","scripts":{"start":"node scripts/serve.mjs","logs":"node scripts/diagnostics-server.mjs","test":"node --import ./tests/register-three.mjs --test tests/*.test.mjs"}}
+{"name":"aicad","private":true,"type":"module","scripts":{"start":"node scripts/serve.mjs","logs":"node scripts/diagnostics-server.mjs","test":"node --import ./tests/register-three.mjs --test tests/*.test.mjs"}}

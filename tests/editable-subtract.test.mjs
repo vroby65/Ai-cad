@@ -7,7 +7,7 @@ import { encodeProject, decodeProject } from '../public/js/files.js';
 import { exportSTL } from '../public/js/export.js';
 import { importSTL } from '../public/js/import.js';
 import { CadView } from '../public/js/renderer.js';
-import { interpretDeepSeek } from '../public/js/api.js';
+import { interpretAI } from '../public/js/api.js';
 import { explain } from '../public/js/explain.js';
 
 const body={id:'body',type:'box',name:'Corpo',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
@@ -38,10 +38,10 @@ test('Subtract conserva base e foro; spostare o ridimensionare il foro ripristin
   assert.ok(ray(0).intersectObject(mesh).length);assert.equal(ray(30).intersectObject(mesh).length,0);
   const resized=applyOperations(moved,{operations:[{op:'resize',id:'tool',dimensions:{x:40,y:20,z:120}}]});near(volume(resized),920000);
   const outside=applyOperations(resized,{operations:[{op:'translate',ids:['tool'],delta:[300,0,0]}]});near(volume(outside),1000000);
-  assert.match(explain(subtract),/modificabil/);
+  assert.match(explain(subtract),/editable/);
   view.meshes.forEach(mesh=>{mesh.geometry.dispose();mesh.material.dispose();});
 });
-test('Scavi su STL importato restano modificabili dopo JSON, Annulla/Ripristina ed esportazione',()=>{
+test('Scavi su Imported STL restano modificabili dopo JSON, Annulla/Ripristina ed esportazione',()=>{
   const mesh=importSTL(exportSTL(project()).buffer,'body.stl','body'),source=project([mesh]);
   const drilled=decodeProject(encodeProject(drill(source)));assert.deepEqual(drilled.objects[0].vertices,mesh.vertices);
   const history=new History(drilled),moved=applyOperations(drilled,{operations:[{op:'translate',ids:['tool'],delta:[30,0,0]}]});history.commit(moved);
@@ -84,8 +84,8 @@ test('La finalizzazione esplicita conserva la sottrazione irreversibile preceden
 test('Il contratto AI usa scavi modificabili di default e restituisce utensili editabili',async t=>{
   let payload;const response={message:'Creo un foro modificabile.',operations:[create(tool),subtract]};
   t.mock.method(globalThis,'fetch',async(url,options)=>{payload=JSON.parse(options.body);return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(response)}}]}));});
-  const parsed=await interpretDeepSeek('Pratica un foro',project(),'body',{key:'test-key'});
-  assert.match(payload.messages[0].content,/bake:true.*esplicitamente/);
+  const parsed=await interpretAI('Pratica un foro',project(),'body',{key:'test-key',url:'https://gateway.example',model:'test-model'});
+  assert.match(payload.instructions,/bake:true.*explicitly/);
   const result=applyOperations(project(),{operations:parsed.operations});assert.equal(result.objects.find(o=>o.id==='tool').hole,true);
   assert.deepEqual(result.objects.find(o=>o.id==='tool').targetIds,['body']);
 });
@@ -94,14 +94,14 @@ test('Un pieno interamente scavato resta recuperabile spostando il foro',()=>{
   const large={...tool,dimensions:{x:120,y:120,z:120}};
   const drilled=applyOperations(project(),{operations:[create(large),subtract]});
   assert.equal(drilled.objects.length,2);assert.deepEqual(drilled.objects[0],body);
-  assert.throws(()=>exportSTL(drilled),/Nessun materiale/);
+  assert.throws(()=>exportSTL(drilled),/No solid material/);
   const moved=applyOperations(drilled,{operations:[{op:'translate',ids:['tool'],delta:[300,0,0]}]});near(volume(moved),1000000);
 });
 test('I limiti delle coppie esplicite e la finalizzazione parziale proteggono i bersagli',()=>{
   const source=project(Array.from({length:33},(_,i)=>({...body,id:'body-'+i})));
-  assert.throws(()=>applyOperations(source,{operations:[create(tool),{...subtract,ids:source.objects.map(o=>o.id)}]}),/32 coppie/);
+  assert.throws(()=>applyOperations(source,{operations:[create(tool),{...subtract,ids:source.objects.map(o=>o.id)}]}),/32 solid\/hole pairs/);
   const linked=applyOperations(project([body,{...body,id:'other'}]),{operations:[create(tool),{...subtract,ids:['body','other']}]});
-  assert.throws(()=>applyOperations(linked,{operations:[{...subtract,bake:true}]}),/tutti i bersagli/);
+  assert.throws(()=>applyOperations(linked,{operations:[{...subtract,bake:true}]}),/all targets/);
   const snapshot=structuredClone(linked);
   assert.throws(()=>applyOperations(linked,{operations:[{op:'translate',ids:['tool'],delta:[10,0,0]},{op:'delete',ids:['missing']}]}));
   assert.deepEqual(linked,snapshot);

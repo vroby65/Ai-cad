@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "name": "Un’automobile",
+  "name": "A car",
   "units": "mm",
   "objects": [
     {
       "id": "chassis",
       "type": "box",
-      "name": "Carrozzeria",
+      "name": "Car body",
       "dimensions": {
         "x": 210,
         "y": 105,
@@ -28,7 +28,7 @@
     {
       "id": "cabin",
       "type": "box",
-      "name": "Abitacolo",
+      "name": "Cabin",
       "dimensions": {
         "x": 100,
         "y": 90,
@@ -50,7 +50,7 @@
     {
       "id": "window-front",
       "type": "box",
-      "name": "Parabrezza",
+      "name": "Windshield",
       "dimensions": {
         "x": 4,
         "y": 74,
@@ -72,7 +72,7 @@
     {
       "id": "window-side-a",
       "type": "box",
-      "name": "Finestrino sinistro",
+      "name": "Left side window",
       "dimensions": {
         "x": 72,
         "y": 4,
@@ -94,7 +94,7 @@
     {
       "id": "window-side-b",
       "type": "box",
-      "name": "Finestrino destro",
+      "name": "Right side window",
       "dimensions": {
         "x": 72,
         "y": 4,
@@ -116,7 +116,7 @@
     {
       "id": "headlight-a",
       "type": "box",
-      "name": "Faro sinistro",
+      "name": "Left headlight",
       "dimensions": {
         "x": 4,
         "y": 22,
@@ -138,7 +138,7 @@
     {
       "id": "headlight-b",
       "type": "box",
-      "name": "Faro destro",
+      "name": "Right headlight",
       "dimensions": {
         "x": 4,
         "y": 22,
@@ -160,7 +160,7 @@
     {
       "id": "wheel-1",
       "type": "cylinder",
-      "name": "Ruota posteriore 1",
+      "name": "Rear wheel 1",
       "dimensions": {
         "radius": 25,
         "height": 20
@@ -181,7 +181,7 @@
     {
       "id": "wheel-2",
       "type": "cylinder",
-      "name": "Ruota posteriore 2",
+      "name": "Rear wheel 2",
       "dimensions": {
         "radius": 25,
         "height": 20
@@ -202,7 +202,7 @@
     {
       "id": "wheel-3",
       "type": "cylinder",
-      "name": "Ruota anteriore 1",
+      "name": "Front wheel 1",
       "dimensions": {
         "radius": 25,
         "height": 20
@@ -223,7 +223,7 @@
     {
       "id": "wheel-4",
       "type": "cylinder",
-      "name": "Ruota anteriore 2",
+      "name": "Front wheel 2",
       "dimensions": {
         "radius": 25,
         "height": 20
@@ -245,7 +245,7 @@
   "groups": [
     {
       "id": "wheels",
-      "name": "Quattro ruote"
+      "name": "Four wheels"
     }
   ]
 }

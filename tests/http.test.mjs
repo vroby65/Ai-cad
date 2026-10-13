@@ -10,12 +10,12 @@ before(async()=>{
 after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));});
 test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   const html=await (await fetch(base)).text();
-  assert.match(html,/id="deepseek-key" type="password"/);
-  assert.match(html,/id="deepseek-balance"/);
+  assert.match(html,/id="api-key" type="password"/);
+  assert.match(html,/id="gateway-status"/);
   assert.match(html,/id="clear-key"/);
-  assert.match(html,/<button id="new"[^>]*aria-label="Nuovo progetto"/);
+  assert.match(html,/<button id="new"[^>]*aria-label="New project"/);
   assert.equal(html.includes('Ctrl + Invio'),false);
-  assert.match(html,/Invio · Maiusc \+ Invio: a capo/);
+  assert.match(html,/Enter to send · Shift \+ Enter: new line/);
   assert.match(html,/id="chat-messages" role="log"/);
   assert.match(html,/id="object-hole" type="checkbox"/);
   assert.equal(html.includes('id="activity-list"'),false);
@@ -45,7 +45,7 @@ test('Gli esempi sono disponibili come JSON statici',async()=>{
 });
 test('Testata compatta con account, nessuna modalità CoderDojo e chat ridimensionabile',async()=>{
   const html=await (await fetch(base)).text(),header=html.match(/<header\b[\s\S]*?<\/header>/)?.[0];
-  for(const id of ['deepseek-key','clear-key','deepseek-balance']) assert.ok(header?.includes(`id="${id}"`));
+  for(const id of ['gateway-url','api-key','clear-key','gateway-status']) assert.ok(header?.includes(`id="${id}"`));
   assert.equal(html.includes('id="teaching"'),false); assert.equal(html.includes('id="project-name"'),false);
   assert.match(html,/id="chat-resizer"[^>]*role="separator"/);
   assert.match(html,/id="prompt" rows="1"/);

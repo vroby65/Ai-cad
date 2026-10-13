@@ -12,7 +12,7 @@ test('Il raccoglitore locale salva fallimenti oscurati fuori da public e li cons
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   t.after(async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));await rm(directory,{recursive:true,force:true});});
   const base=`http://127.0.0.1:${server.address().port}`,headers={Origin:'http://localhost','Content-Type':'application/json'};
-  const snapshot={app:'DeepCAD',version:1,entries:[{time:new Date().toISOString(),stage:'failed',data:{message:'invalid profile',key:'private-key',content:'sk-0123456789abcdef0123456789abcdef'}}]};
+  const snapshot={app:'AIcad',version:1,entries:[{time:new Date().toISOString(),stage:'failed',data:{message:'invalid profile',key:'private-key',content:'sk-0123456789abcdef0123456789abcdef'}}]};
   const response=await fetch(base+'/diagnostics',{method:'POST',headers,body:JSON.stringify(snapshot)});assert.equal(response.status,204);
   const saved=await readFile(join(directory,'last-failure.json'),'utf8');assert.match(saved,/invalid profile/);assert.doesNotMatch(saved,/private-key|0123456789abcdef/);
   await fetch(base+'/diagnostics',{method:'POST',headers,body:JSON.stringify({...snapshot,entries:[{...snapshot.entries[0],stage:'startup',data:{}}]})});

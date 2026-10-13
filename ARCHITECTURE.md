@@ -1,4 +1,4 @@
-# DeepCAD architecture
+# AIcad architecture
 
 The active HTML5/ES-module app lives in public/ and needs only a browser and HTTP
 static hosting. The archived PHP backend is not called or deployed.
@@ -9,8 +9,8 @@ static hosting. The archived PHP backend is not called or deployed.
 | --- | --- |
 | index.html, style.css, js/app.js | UI, account, scene, chat and events |
 | js/project.js, js/limits.js | Strict schemas, bounds and atomic operations |
-| js/api.js | Official DeepSeek client, system contract and response parsing |
-| js/account.js | Remember/delete key, fetch and validate balance |
+| js/api.js | Configurable Responses gateway, English instructions and response parsing |
+| js/account.js | Remember/delete gateway URL and key |
 | js/chat.js, js/explain.js | Safe text bubbles, session conversation, applied operations |
 | js/diagnostics.js | Bounded, redacted session events and downloadable diagnostics |
 | js/properties.js | Selected-object form, typed changes and inline errors |
@@ -31,15 +31,15 @@ The first paths are relative to public/.
 
 ## Command flow
 
-The browser sends recent conversation pairs, the command, selectedId and compact project to the official
-HTTPS API using the fixed deepseek-flash model and JSON response mode.
-thinking.type is explicitly disabled. The documented provider default enables
-thinking at high effort, which can spend time/output budget before the final JSON;
-the application previously inherited that default despite its 60-second deadline.
+The browser sends recent conversation pairs, the command, selectedId and compact
+project to the configured gateway's /v1/responses endpoint. The payload contains
+model, instructions and input; the first visible model from /v1/models is used.
+The Pi gateway performs OAuth and consumes the mandatory upstream stream through
+response.completed before returning compact JSON. Browser replies are synchronous.
 Mesh vertices are omitted and triangleCount added. The key occurs only in the
 Authorization header, never in the prompt, snapshots or exported files.
 
-The response is untrusted. parseEnvelope requires a complete stop response, JSON
+The response is untrusted. parseEnvelope accepts the gateway output_text (or a complete compatibility envelope), JSON
 with exact message/operations fields, a bounded explanation and allowed operations.
 applyOperations works on a copy and validates schemas, references and resource bounds
 after each operation. Editable-hole pair limits are checked on the completed batch,
@@ -240,26 +240,32 @@ before STLLoader runs; nonfinite/out-of-range coordinates are rejected.
 Files are local browser downloads/uploads; no client filename becomes a server path.
 Imports are atomic and undoable. Opening JSON starts new project history.
 Forty cloned snapshots retain undo/redo; a new edit discards the redo branch.
-Nuovo prepares an empty scene and resets history, chat/context, selection, prompt
+New prepares an empty scene and resets history, chat/context, selection, prompt
 and camera. Existing scene/chat/draft/undo data require confirmation; cancellation
-changes nothing. A busy request/load blocks it. Account storage and credit stay intact.
+changes nothing. A busy request/load blocks it. Account URL and key storage stay intact.
 
 ## Account and layout
 
-The key is stored only in localStorage under deepcad.deepseek-key, per origin.
-Blocked storage does not break the app. Cancella removes only this entry, aborts
-pending balance requests and resets the display. It never clears unrelated storage.
+URL and key are stored separately in localStorage under aicad.gateway-url and
+aicad.api-key. Old DeepSeek storage is left alone. Blocked storage does not break
+the app. Clear removes only the new key, aborts pending catalog checks and resets
+the model display; unrelated storage and the gateway URL remain intact.
 
-The balance client uses official GET /user/balance, Authorization only, a ten-second
-timeout and 512 KiB maximum response. Decimal strings retain precision; currencies
-are not added together. Refresh happens at startup, after commands and after a
-600 ms key-input debounce. Abort and version checks prevent stale display updates.
+GET /v1/models uses Authorization only, a ten-second timeout and 512 KiB response
+limit. Connection checks run at startup, after commands and after a 600 ms input
+debounce. Abort/version checks prevent stale model results after credential edits.
+POST /v1/responses has a 270-second deadline. Redirects, retries and cookies are
+omitted. Credentials, query strings and fragments are rejected in gateway URLs.
 
-The compact header contains brand, key, Cancella and balance; toolbar follows.
-Narrow screens wrap the account onto another line. The title remains in model/file
-data without a header element. Chat uses a --chat-height flex panel, scrolling
-messages and a 38 px prompt. Pointer capture and Up/Down/Home/End resize the chat;
-ResizeObserver adapts limits and ARIA values. Height is not persisted.
+The header contains brand, URL:port, key, Clear and gateway/model status, with the
+toolbar below. Narrow screens wrap credentials. Chat resizing, pointer capture,
+keyboard behavior and non-persisted height remain unchanged. All app-owned labels,
+errors, examples, explanations and model instructions are English.
+
+The Pi permits CORS only for the Pages origin and loopback development origins.
+Browser local-network permission can be needed when Pages HTTPS contacts LAN HTTP.
+Unsupported browsers require local serving or a trusted HTTPS gateway. No public
+proxy or router port is configured by this application.
 
 ## Deployment and future work
 

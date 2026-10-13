@@ -17,5 +17,5 @@ export class Diagnostics {
     this.onChange();
   }
   clear() { this.entries=[];this.onChange(); }
-  export() { return JSON.stringify({app:'DeepCAD',version:1,entries:this.entries},null,2); }
+  export() { return JSON.stringify({app:'AIcad',version:1,entries:this.entries},null,2); }
 }

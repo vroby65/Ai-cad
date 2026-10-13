@@ -7,7 +7,7 @@ import { encodeProject, decodeProject } from '../public/js/files.js';
 import { exportSTL } from '../public/js/export.js';
 import { importSTL } from '../public/js/import.js';
 import { CadView } from '../public/js/renderer.js';
-import { interpretDeepSeek } from '../public/js/api.js';
+import { interpretAI } from '../public/js/api.js';
 import { explain } from '../public/js/explain.js';
 
 const body={id:'body',type:'box',name:'Blocco',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
@@ -36,7 +36,7 @@ test('Sottrazione modifica il solido con lo stesso ID e consuma la forma foro',(
   const ray=new THREE.Raycaster(new THREE.Vector3(0,0,200),new THREE.Vector3(0,0,-1));
   assert.equal(ray.intersectObject(mesh).length,0); assert.equal(mesh.visible,true);
   mesh.geometry.dispose(); mesh.material.dispose();
-  assert.match(explain(cut),/Sottrae.*tool.*body/);
+  assert.match(explain(cut),/Subtract.*tool.*body/);
 });
 test('Sottrazione esplicita attraversa i gruppi solo sui bersagli indicati e preserva gli altri solidi',()=>{
   const original=state([{...body,groupId:'part'},tool,{...body,id:'wheel',groupId:'wheels'}],[{id:'part',name:'Carrozzeria'},{id:'wheels',name:'Ruote'}]);
@@ -65,10 +65,10 @@ test('Taglio laterale ricentra i vertici senza muovere il materiale, anche con s
 test('Sottrazioni senza intersezione, utensili errati e batch malformati sono rifiutati senza mutazioni',()=>{
   const original=state();
   for(const op of [{...cut,toolIds:['missing']},{...cut,toolIds:['body']},{...cut,ids:[]},{...cut,toolIds:['tool','tool']},{...cut,extra:true}]) assert.throws(()=>applyOperations(original,{operations:[op]}));
-  assert.throws(()=>applyOperations(state([body,{...tool,position:[500,0,50]}]),{operations:[cut]}),/interse|materiale/i);
-  assert.throws(()=>applyOperations(state([body,{...tool,position:[60,0,50]}]),{operations:[cut]}),/interse|materiale/i);
+  assert.throws(()=>applyOperations(state([body,{...tool,position:[500,0,50]}]),{operations:[cut]}),/intersect|material/i);
+  assert.throws(()=>applyOperations(state([body,{...tool,position:[60,0,50]}]),{operations:[cut]}),/intersect|material/i);
   const carved=applyOperations(original,{operations:[cut]});
-  assert.throws(()=>applyOperations(carved,{operations:[{op:'create',object:tool},cut]}),/materiale/i);
+  assert.throws(()=>applyOperations(carved,{operations:[{op:'create',object:tool},cut]}),/material/i);
   assert.throws(()=>applyOperations(original,{operations:[cut,{op:'execute',code:'alert(1)'}]}));
   assert.deepEqual(original,state());
 });
@@ -91,8 +91,8 @@ test('Il contratto DeepSeek autorizza la sottrazione e applica il taglio allo ST
   const imported=importSTL(exportSTL(state([body])).buffer,'blocco.stl','body'); let payload;
   const reply={message:'Sottraggo il foro dal solido, conservando il suo ID.',operations:[{op:'create',object:tool},cut]};
   t.mock.method(globalThis,'fetch',async(_url,options)=>{payload=JSON.parse(options.body);return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(reply)}}]}));});
-  const original=state([imported]); const batch=await interpretDeepSeek('Scava il solido selezionato',original,'body',{key:'test-key'});
-  assert.ok(payload.messages[0].content.includes('toolIds')); assert.ok(payload.messages[0].content.includes('STL chiusi'));
+  const original=state([imported]); const batch=await interpretAI('Cuts il solido selezionato',original,'body',{key:'test-key',url:'https://gateway.example',model:'test-model'});
+  assert.ok(payload.instructions.includes('toolIds')); assert.ok(payload.instructions.includes('closed imported STL'));
   near(volume(exportSTL(applyOperations(original,{operations:batch.operations}))),960000);
 });
 
@@ -108,7 +108,7 @@ test('Quattro utensili temporanei in una scena affollata sono consumati da subtr
   assert.equal(original.objects.filter(o=>o.groupId===null).length*tools.length,36);
   const response={message:'Scavo quattro passaruota solo nella carrozzeria.',operations:[...creates,{op:'subtract',ids:['chassis'],toolIds:tools.map(o=>o.id),bake:true}]};
   t.mock.method(globalThis,'fetch',async()=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(response)}}]})));
-  const parsed=await interpretDeepSeek('Scava quattro passaruota',original,'chassis',{key:'test-key'});
+  const parsed=await interpretAI('Cuts quattro passaruota',original,'chassis',{key:'test-key',url:'https://gateway.example',model:'test-model'});
   const updated=applyOperations(original,{operations:parsed.operations});
   assert.equal(updated.objects.find(o=>o.id==='chassis').type,'mesh');assert.equal(updated.objects.filter(o=>o.hole).length,0);
   for(const object of original.objects.filter(o=>o.id!=='chassis'))assert.deepEqual(updated.objects.find(o=>o.id===object.id),object);
@@ -126,10 +126,10 @@ test('Fori creati prima di raggrupparli sono validati sui gruppi finali del batc
 });
 test('I limiti finali per fori modificabili e quelli reali di subtract restano obbligatori e atomici',async()=>{
   const {original,creates}=await crowdedCar(),snapshot=structuredClone(original);
-  assert.throws(()=>applyOperations(original,{operations:creates}),/Troppe sottrazioni.*32/);
+  assert.throws(()=>applyOperations(original,{operations:creates}),/Too many cuts.*32/);
   const solids=Array.from({length:9},(_,i)=>({...body,id:'body-'+i}));
   const tools=Array.from({length:4},(_,i)=>({...tool,id:'tool-'+i}));
-  assert.throws(()=>applyOperations(state(solids),{operations:[...tools.map(object=>({op:'create',object})),{op:'subtract',ids:solids.map(o=>o.id),toolIds:tools.map(o=>o.id)}]}),/^Error: Operazione 5 \(subtract\): Sottrazione: massimo 8 forme foro e 32 coppie/);
-  assert.throws(()=>applyOperations(original,{operations:[{op:'update',id:'chassis',changes:{dimensions:{x:-1,y:100,z:100}}},{op:'update',id:'chassis',changes:{dimensions:{x:100,y:100,z:100}}}]}),/Numero fuori limite/);
+  assert.throws(()=>applyOperations(state(solids),{operations:[...tools.map(object=>({op:'create',object})),{op:'subtract',ids:solids.map(o=>o.id),toolIds:tools.map(o=>o.id)}]}),/^Error: Operation 5 \(subtract\): Subtract: maximum 8 hole tools and 32 solid\/hole pairs/);
+  assert.throws(()=>applyOperations(original,{operations:[{op:'update',id:'chassis',changes:{dimensions:{x:-1,y:100,z:100}}},{op:'update',id:'chassis',changes:{dimensions:{x:100,y:100,z:100}}}]}),/Number out of bounds/);
   assert.deepEqual(original,snapshot);
 });

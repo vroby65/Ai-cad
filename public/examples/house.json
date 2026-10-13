@@ -1,12 +1,12 @@
 {
   "version": 1,
-  "name": "Una casetta",
+  "name": "A small house",
   "units": "mm",
   "objects": [
     {
       "id": "walls",
       "type": "box",
-      "name": "Pareti",
+      "name": "Walls",
       "dimensions": {
         "x": 160,
         "y": 130,
@@ -28,7 +28,7 @@
     {
       "id": "door",
       "type": "box",
-      "name": "Porta",
+      "name": "Door",
       "dimensions": {
         "x": 32,
         "y": 5,
@@ -50,7 +50,7 @@
     {
       "id": "window-left",
       "type": "box",
-      "name": "Finestra sinistra",
+      "name": "Left window",
       "dimensions": {
         "x": 30,
         "y": 5,
@@ -72,7 +72,7 @@
     {
       "id": "window-right",
       "type": "box",
-      "name": "Finestra destra",
+      "name": "Right window",
       "dimensions": {
         "x": 30,
         "y": 5,
@@ -94,7 +94,7 @@
     {
       "id": "roof-left",
       "type": "box",
-      "name": "Falda sinistra del tetto",
+      "name": "Left roof slope",
       "dimensions": {
         "x": 110,
         "y": 155,
@@ -116,7 +116,7 @@
     {
       "id": "roof-right",
       "type": "box",
-      "name": "Falda destra del tetto",
+      "name": "Right roof slope",
       "dimensions": {
         "x": 110,
         "y": 155,
@@ -138,7 +138,7 @@
     {
       "id": "chimney",
       "type": "cylinder",
-      "name": "Comignolo",
+      "name": "Chimney",
       "dimensions": {
         "radius": 12,
         "height": 60

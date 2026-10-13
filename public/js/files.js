@@ -5,13 +5,13 @@ export function encodeProject(state) {
   validateProject(state);
   let raw=JSON.stringify(state,null,2)+'\n';
   if(new TextEncoder().encode(raw).byteLength>MAX_FILE_BYTES) raw=JSON.stringify(state)+'\n';
-  if(new TextEncoder().encode(raw).byteLength>MAX_FILE_BYTES) throw new Error('Progetto troppo grande (massimo 8 MiB).');
+  if(new TextEncoder().encode(raw).byteLength>MAX_FILE_BYTES) throw new Error('Project too large (maximum 8 MiB).');
   return raw;
 }
 export function decodeProject(raw) {
-  if(new TextEncoder().encode(raw).byteLength>MAX_FILE_BYTES) throw new Error('File troppo grande (massimo 8 MiB).');
+  if(new TextEncoder().encode(raw).byteLength>MAX_FILE_BYTES) throw new Error('File too large (maximum 8 MiB).');
   let value;
-  try { value=JSON.parse(raw); } catch { throw new Error('Il file non contiene JSON valido.'); }
+  try { value=JSON.parse(raw); } catch { throw new Error('The file does not contain valid JSON.'); }
   return validateProject(value);
 }
 export function download(content, filename, type) {

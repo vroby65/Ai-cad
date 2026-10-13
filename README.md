@@ -1,16 +1,16 @@
-# DeepCAD
+# AIcad
 
 A conversational 3D modeling lab built with HTML5, JavaScript, Three.js and the
-official DeepSeek API. Describe a shape, inspect the model and export STL.
+a user-configured AI Responses gateway. Describe a shape, inspect the model and export STL.
 Designed for learning geometry, programming and AI, including CoderDojo activities.
 
-[Open DeepCAD](https://vroby65.github.io/deepcad/) ·
+[Open AIcad](https://vroby65.github.io/deepcad/) ·
 [Command format](COMMANDS.md) · [Architecture](ARCHITECTURE.md) ·
 [Verification report](docs/VERIFICATION.md)
 
 The active application runs entirely in the browser. No PHP, Python, database,
 framework, CDN or npm installation is needed. The interface and AI explanations
-are currently in Italian; repository documentation is in English.
+are in English, as is the repository documentation.
 This is an educational mesh modeler, not a precision mechanical CAD system.
 
 ## Run locally
@@ -45,50 +45,56 @@ Serve **only public/**, never the repository root. JavaScript modules need HTTP,
 not file://. The former PHP backend is preserved in [legacy/](legacy/README.md)
 and is not used by the browser application.
 
-## DeepSeek key and balance
+## Gateway URL:port and API key
 
-Enter your own API key beside DeepCAD. **Cancella** clears the field and stored
-value, cancels a pending balance request and resets the balance. The toolbar is
-directly below this compact header.
+Enter your gateway's address (including its port) and API key beside AIcad.
+For example, `http://192.168.1.10:18765`. A bare `address:port` is accepted,
+and a trailing `/v1` is normalized. Credentials, queries and fragments are rejected
+in URLs. The key is sent only in Authorization headers to the selected gateway.
 
-The fixed model is **deepseek-flash**, documented by the
-[official DeepSeek API](https://api-docs.deepseek.com/). There is no model selector
-or demo mode. Natural-language commands require your own API credit.
-Requests explicitly disable thinking mode to reserve the generation budget for the
-CAD JSON response. The model remains Flash, with no additional interface setting.
+The adapter uses `GET /v1/models` and `POST /v1/responses`, matching Pi AI Gateway.
+The first visible model returned by the account catalog is selected automatically.
+The header shows connection errors or the chosen model; no DeepSeek credit API is
+called. The gateway handles ChatGPT OAuth and token renewal. Sign in manually on
+the gateway before making AI requests; Plus access still depends on granted plan
+permission and limits. There is no demo mode or automatic paid retry.
 
-At the user's request, the key is remembered in this browser's localStorage
-under `deepcad.deepseek-key`. Clearing the field also deletes it. If storage is
-blocked, the status reports it and the key remains available only in the open page.
-Storage is per origin: localhost and GitHub Pages do not share the remembered key.
-The key never enters JSON/STL files, project history, repository files or logs.
+URL and key are saved separately in this browser's localStorage under
+`aicad.gateway-url` and `aicad.api-key`. **Clear** forgets only the key and cancels
+pending connection checks. Old DeepSeek keys are not reused for the gateway.
+Neither value is included in project files, snapshots or prompts; keys are redacted
+from logs. Storage is per origin and may be blocked by browser policy.
 
-This is a personal browser client: JavaScript running on the page can access the
-key. It is sent only in Authorization headers to the official HTTPS
-/chat/completions and /user/balance endpoints. No proxy collects it.
-Use a trusted deployment on a browser profile you control.
+The published site remains a static browser app. Requests go from your browser
+to your gateway, so a LAN gateway remains accessible only while you are on that LAN.
+The gateway must allow the hosting origin through CORS. Current Chrome can ask for
+local-network permission for an HTTP private IP; allow it when prompted.
+Browsers without this support can block HTTP from an HTTPS site: use a trusted
+HTTPS gateway or run AIcad locally in that case. Never open router ports for this.
+See [Chrome's local-network access guide](https://developer.chrome.com/blog/local-network-access).
 
-The balance appears next to the key. It refreshes at startup, after changing the
-key and after commands. Zero credit, errors and currencies are kept distinct;
-decimal precision is preserved. Stale responses cannot replace a new key's balance.
-The .env.example file belongs only to the archived PHP backend.
+Pi AI Gateway must allow `https://vroby65.github.io` and loopback development
+origins for `GET`, `POST` and `OPTIONS`, including Authorization and Content-Type.
+This changes browser access only, not its LAN bind or public exposure.
+The app consumes the gateway's `{model,output_text}` JSON. It validates the model's
+CAD JSON before applying any geometry; malformed output leaves the scene intact.
 
 ## Model and navigate
 
-Write in the chat input and press **Enter** or **Invia**. **Shift+Enter** adds a
+Write in the chat input and press **Enter** or **Send**. **Shift+Enter** adds a
 line break. Examples:
 
-- `Disegna un cubo rosso di 100 mm.` — draw a red 100 mm cube.
-- `Aggiungi un cilindro sopra il cubo.` — add a cylinder above it.
-- `Crea un foro cilindrico passante di diametro 20 mm nel cubo.` — drill a hole.
-- `Scava i vani ruota nella carrozzeria e nei parafanghi, conserva le ruote.`
-- `Sposta questo oggetto di 50 mm lungo X.` — move the selected object.
-- `Crea una torre esagonale alta 120 mm, ritorta di 120 gradi e rastremata in cima.`
-- `Crea una maniglia curva piegando di 180 gradi una barra 10×15×120 mm lungo Z.`
-- `Crea una bottiglia tornita con spalle arrotondate e collo stretto, poi scavala.`
+- `Draw a red 100 mm cube.` — draw a red 100 mm cube.
+- `Add a cylinder above the cube.` — add a cylinder above it.
+- `Drill a 20 mm through-hole in the cube.` — drill a hole.
+- `Cut wheel arches in the body and fenders, preserving the wheels.`
+- `Move this object 50 mm along X.` — move the selected object.
+- `Create a 120 mm hexagonal tower with a 120-degree twist and tapered top.`
+- `Create a curved handle by bending a 10×15×120 mm bar 180 degrees along Z.`
+- `Create a turned bottle with rounded shoulders and a narrow neck, then hollow it.`
 
 Left-drag rotates, the wheel zooms and right-drag pans. Click a solid or use the
-collapsible **Oggetti** panel to select it. **Inquadra** fits visible material.
+collapsible **Objects** panel to select it. **Fit view** fits visible material.
 The scene includes a grid and XYZ axes. One unit is one millimeter; Z is vertical.
 
 Shapes: boxes/cubes, spheres, cylinders, cones, tori, profile extrusions and solids
@@ -104,7 +110,7 @@ explicitly lists them. Undeclared group references remain errors.
 
 ## Profiles and deformations
 
-DeepSeek can define a simple 2D outline and extrude it into a shaped body, wing or
+AI can define a simple 2D outline and extrude it into a shaped body, wing or
 concave bracket, or revolve a radial profile into a bottle, vase or turned part.
 Profiles contain up to 64 reference points in mm; dimensions scale their extents.
 Extrusions are centered and run along local Z. Revolution runs around local Z and
@@ -116,8 +122,8 @@ Up to six ordered modifiers keep the original geometry, ID and editing informati
 Deformations run before editable cuts. JSON retains their parameters and source;
 STL contains the evaluated surface. Undo/redo includes these changes.
 Select the part to edit profile coordinates, deformation axes, angles or taper
-factors in **Oggetti**, then press **Applica**. Ask the chat to add/remove modifiers
-or change the number of profile points. `Rimuovi le deformazioni da questo oggetto`
+factors in **Objects**, then press **Apply**. Ask the chat to add/remove modifiers
+or change the number of profile points. `Remove deformations from this object`
 restores its base shape; dimensions refer to that base rather than the bent extent.
 
 Bend acts in the planes X→Y, Y→Z or Z→X. Excessively tight bends, self-intersecting
@@ -131,14 +137,14 @@ CAD fillets and geometric constraints are not implemented.
 Primitive tools marked `hole:true` are invisible and excluded from STL. Editable
 tools remain in the object list.
 
-For drilling, DeepSeek creates tools and uses **subtract**. This cuts explicitly
+For drilling, AI creates tools and uses **subtract**. This cuts explicitly
 named solids while preserving their original shapes and the editable tools.
 Solids keep their IDs, types, names, colors, groups and orientations. Select a
-**FORO** in **Oggetti**, change its center, rotation or dimensions, then press
-**Applica**: the old opening fills back in and material is removed at the new
-position. You can also ask DeepSeek to move or resize that same named hole.
+**HOLE** in **Objects**, change its center, rotation or dimensions, then press
+**Apply**: the old opening fills back in and material is removed at the new
+position. You can also ask AI to move or resize that same named hole.
 JSON preserves this editing information; STL contains the resulting cut surface.
-**Annulla / Ripristina** include hole edits. An initial operation removing no
+**Undo / Redo** include hole edits. An initial operation removing no
 material is rejected. A completely removed solid can return when its tool moves.
 
 Subtract supports primitives and closed meshes imported from **JSON or STL**.
@@ -173,7 +179,7 @@ manifold output, printability or mechanical precision. Solids are not fused.
 
 ## Files, history and chat
 
-- **Nuovo** starts an empty project, clears selection, chat/context, prompt and
+- **New** starts an empty project, clears selection, chat/context, prompt and
   undo/redo, and resets the view. Confirm before discarding an existing scene,
   conversation, draft or history. The API key and credit remain unchanged.
   This button is disabled during AI requests and file loads.
@@ -183,7 +189,7 @@ manifold output, printability or mechanical precision. Solids are not fused.
   as mm because STL stores no unit metadata. Meshes can be transformed and cut.
 - **Esporta STL** downloads the evaluated model, including cuts and transformations,
   without tools, grid, axes or selection outlines.
-- **Annulla / Ripristina** retain 40 independent snapshots. An edit after undo
+- **Undo / Redo** retain 40 independent snapshots. An edit after undo
   discards the redo branch. Opening JSON replaces the project and history.
 
 Save before reloading: unsaved models and chat are not persisted. The key remains
@@ -192,7 +198,7 @@ A mesh does not retain a parametric primitive history.
 
 The chat shows 40 exchanges with the command, explanation, applied operations and
 expandable **Risposta completa · JSON**. Rejected output remains readable but is not
-shown as applied. There is no CoderDojo switch. DeepSeek receives recent conversation
+shown as applied. There is no CoderDojo switch. AI receives recent conversation
 pairs, including your prompts, assistant explanations, affected IDs and whether a
 request succeeded. This allows replies such as “yes”, “conical” or “like before”.
 Conversation context is limited to 40 exchanges and 128 KiB, retaining recent whole
@@ -200,23 +206,22 @@ pairs. It stays in memory and resets when opening a JSON file or starter project
 The current command, selection and compact state are sent last and take priority
 after manual edits, undo/redo or STL import. Mesh vertices and rejected raw output
 are omitted. The key is never included in this context.
-While DeepSeek responds, three animated dots replace the waiting text. An accessible
+While AI responds, three animated dots replace the waiting text. An accessible
 status label remains available; reduced-motion preferences disable the animation.
 The indicator disappears on success or error.
 
-Select a part in the scene or object list, open **Oggetti** if needed, and edit its
-name, color, center XYZ or dimensions in the sidebar. **Ruota di · ° (assi della
-griglia)** accepts additional turns around the fixed scene axes, applied X then Y
+Select a part in the scene or object list, open **Objects** if needed, and edit its
+name, color, center XYZ or dimensions in the sidebar. **Rotate by · ° (world axes)** accepts additional turns around the fixed scene axes, applied X then Y
 then Z with the right-hand sign convention. Press
-**Applica** (or Enter in a field) to commit all changed values together, without an
+**Apply** (or Enter in a field) to commit all changed values together, without an
 API call. Values are in mm or degrees; dimensions match the selected primitive.
 Imported/cut meshes can also be resized; originally planar axes remain locked at
 zero. Invalid edits leave the scene unchanged and show an error in the panel.
-Updates preserve the ID, refresh the geometry and support **Annulla / Ripristina**.
+Updates preserve the ID, refresh the geometry and support **Undo / Redo**.
 Rotation fields start at zero and return to zero after applying: entering 30 on X
 turns the current part by another 30° about world X. They are not absolute saved
 Euler angles. This avoids X/Z controls merging when the existing orientation has
-Y at ±90°. Chat `Ruota di 90° su Z` uses the same world-axis composition. The stored
+Y at ±90°. Chat `Rotate 90° around Z` uses the same world-axis composition. The stored
 JSON retains absolute Euler XYZ orientations for compatibility; its equivalent
 numbers can change together after a relative turn. Request an absolute orientation
 through chat when needed. Each part rotates about its own center; groups do not
@@ -231,7 +236,7 @@ persisted. The prompt stays on one compact row and scrolls for long text.
 Starter projects: house, robot, car and **Forme complesse** (a hollow profiled vase,
 twisted/tapered tower, curved handle, torus and shaped wing).
 They open without API calls; natural-language
-edits require DeepSeek. The house's doors/windows are decorations and its roof
+edits require AI. The house's doors/windows are decorations and its roof
 uses rotated boxes.
 
 ## GitHub Pages
@@ -242,15 +247,15 @@ source. Main-branch deployments follow passing tests; pull requests only run tes
 Actions are pinned to commits; no application keys or build secrets are required.
 See [GitHub's custom workflow guide](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
-Relative asset paths support a project subdirectory. DeepSeek must allow CORS
-requests from the hosting origin. Chat and balance preflights succeeded for the
-intended Pages origin; this does not verify a paid/authenticated request.
-Users enter their own keys in the browser.
+Relative asset paths support a project subdirectory. The configured gateway must
+allow CORS from the Pages origin. Browser preflight checks do not prove account
+permissions or authenticated model inference. The site publishes only static app
+files; the gateway and its OAuth credentials remain private.
 
 ## Tests and maintenance
 
-If a command produces nothing, expand **Diagnostica** above the chat. The panel opens
-on command errors. **Scarica log** downloads `deepcad-diagnostics.json`; **Cancella log**
+If a command produces nothing, expand **Diagnostics** above the chat. The panel opens
+on command errors. **Download log** downloads `aicad-diagnostics.json`; **Clear log**
 clears only the diagnostic history. Logs record the command, compact source scene,
 request settings, HTTP status, elapsed time, token counts, finish reason, bounded
 raw output and the failing validation/geometry phase. Operation errors include their
@@ -271,10 +276,10 @@ For automatic local collection, start a second terminal in the repository:
 npm run logs
 ~~~
 
-This optional Node service binds only to 127.0.0.1:8001. Locally served DeepCAD sends
+This optional Node service binds only to 127.0.0.1:8001. Locally served AIcad sends
 redacted snapshots to it and stores `.local/logs/latest.json` plus
 `.local/logs/last-failure.json`, outside public and ignored by Git. A new page startup
-preserves the last failure; **Cancella log** removes it when the collector is available.
+preserves the last failure; **Clear log** removes it when the collector is available.
 Collector errors do not interrupt modeling. GitHub Pages does not send logs to it.
 
 The chat keeps its internal result/ID summaries separate from the provider's output
@@ -293,7 +298,7 @@ node --import ./tests/register-three.mjs --test tests/*.test.mjs
 
 The suite uses real Three.js geometries, STL loading/export and CSG. It checks
 JSON validation, IDs, atomic operations, meshes, removed volume, raycast through
-holes, round trips, undo/redo, chat, key storage, balance, resize events and HTTP.
+holes, round trips, undo/redo, chat, key/URL storage, gateway connection, resize events and HTTP.
 Fetches and DOM/pointer interactions are simulated; no paid calls occur.
 See [verification details](docs/VERIFICATION.md).
 
@@ -305,7 +310,7 @@ Manual Firefox checks:
 4. Import a closed STL, drill, export and reopen it.
 5. Save/reopen JSON with a mesh and editable tools; check the cuts.
 6. Drag the chat separator, use its keyboard controls and resize the window.
-7. Reload and check remembered key/balance; clear during a pending request.
+7. Reload and check remembered key/URL and gateway status; clear during a pending request.
 8. Try malformed files, a narrow screen and an external STL slicer.
 9. Answer a clarification with a short reply; check earlier preferences and IDs.
 10. Edit primitive/mesh/hole values, undo/redo, and confirm the next AI command
@@ -322,7 +327,7 @@ Read [AGENTS.md](AGENTS.md), [ARCHITECTURE.md](ARCHITECTURE.md) and
 `bash scripts/vendor-three.sh`, `bash scripts/vendor-csg.sh` and
 `node scripts/create-examples.mjs`. These are not required for everyday use.
 
-Next steps: real Firefox/DeepSeek verification, robust topology checks, group pivots
+Next steps: real Firefox/AI verification, robust topology checks, group pivots
 and a geometric kernel for precision booleans, constraints, fillets, dimensions
 and STEP. No autosave, general union/intersection or STEP is implemented.
 

@@ -1,6 +1,6 @@
 # Development agent guide
 
-DeepCAD is an educational HTML5/JavaScript/Three.js modeler. Read README.md,
+AIcad is an educational HTML5/JavaScript/Three.js modeler. Read README.md,
 ARCHITECTURE.md and COMMANDS.md. The active app does not use PHP; legacy/ is an
 archive outside the public deployment.
 
@@ -12,7 +12,7 @@ archive outside the public deployment.
 - Optional loopback log collection: public/js/local-diagnostics.js and scripts/diagnostics-server.mjs.
 - Selected-object form: public/js/properties.js, integrated through app.js.
 - Schemas/operations: project.js; limits: limits.js; AI: api.js.
-- Key storage/balance: account.js and app.js.
+- Gateway URL/key storage: account.js and app.js.
 - View: renderer.js; base geometry: geometry.js; cuts: boolean.js.
 - Profiles: profiles.js; sampled deformations: deform.js.
 - State/history: state.js; JSON: files.js; STL: import.js and export.js.
@@ -25,17 +25,18 @@ archive outside the public deployment.
 ## Invariants
 
 Never read real user API keys for tests. Use fake keys and mocked fetches, with no
-paid API calls. The user explicitly requested remembering the password input in
-localStorage under deepcad.deepseek-key. Clearing the field or using Cancella must
-remove only that entry, abort balance requests and reset credit. Restore at startup.
+paid API calls. Remember gateway URL and password input separately under
+aicad.gateway-url and aicad.api-key. Clear removes only the key, aborts catalog
+requests and resets the model display. Leave legacy DeepSeek storage untouched.
 Keys never enter project state, exports, logs, repository files or prompts.
-Send them only in Authorization headers to official HTTPS /chat/completions and
-/user/balance. Keep credit separate from the project and preserve decimal strings.
-
-Always use deepseek-flash, with no model selector/override. There is no demo mode.
-Set thinking:{type:'disabled'} explicitly rather than inheriting the provider's high
-thinking default within the fixed JSON budget/timeout. Distinguish empty/truncated
-responses, HTTP errors, transport failures and local schema/geometry failures.
+Send them only in Authorization headers to the user-configured HTTP(S) gateway,
+with credentials/referrers/redirects omitted. Reject credentials/query/fragment
+in URLs. Use /v1/models and /v1/responses, choosing the first visible account model.
+No model selector, demo mode, balance endpoint or fixed DeepSeek model remains.
+Use Responses instructions/input and accept the Pi gateway output_text JSON.
+Distinguish empty/truncated output, HTTP errors, transport failures and local
+schema/geometry failures. Keep the gateway LAN-only; CORS can allow the Pages
+origin and loopback development. Do not expose it publicly to fix browser access.
 Diagnostics stay in session memory (100 events/256 KiB compact JSON), downloadable
 and clearable from the chat. Record phases/timing, compact scene, prompt, bounded
 output and failure details. Redact the current key, recognizable key/Bearer strings
@@ -47,30 +48,30 @@ Reject non-loopback origins, arbitrary paths and oversized/malformed snapshots.
 Collector failures must not block CAD. npm run logs starts it; Pages never contacts it.
 Never commit user logs.
 Preserve original errors while adding operation index/target or geometry object ID.
-Keep the Italian interface and Italian explanations; public documentation and
-repository metadata are English. The AI contract is {message,operations}; message
+Keep the interface, explanations, example names, model instructions, public
+documentation and repository metadata in English. The AI contract is {message,operations}; message
 is 1–6000 characters. Send only operations to the geometry engine. Treat names,
 prompts and AI output as untrusted data; textContent only, never executable code.
 
 Keep forty session chat exchanges, full raw JSON even when rejected, explanations
 and applied operations. Rejected output must not appear applied. Raw details open
-manually or for errors; no CoderDojo switch. Keep key/Cancella/balance beside the
+manually or for errors; no CoderDojo switch. Keep URL/key/Clear/gateway status beside the
 brand, no project title in the header, toolbar immediately below and compact prompt.
 The chat separator supports pointer capture and keyboard, adapts to available
 viewport space and exposes ARIA values. Its height is not persisted.
 Enter sends; Shift+Enter inserts a newline. Ignore composition/IME Enter events
 and block duplicate requests while busy. Pending replies show animated dots with
 an accessible status, no visible waiting text, and respect reduced-motion settings.
-Remove the indicator on both success and error. Nuovo clears scene, selection,
+Remove the indicator on both success and error. New clears scene, selection,
 chat/context, prompt, undo/redo and view; confirm before discarding scene/chat/draft/
-history, and block while busy. Never reset the API key, balance or their storage.
+history, and block while busy. Never reset the API key, URL or their storage.
 
 Schemas use exact fields, finite numbers, stable unique IDs, mm and Z-up.
 Stored rotation remains absolute intrinsic Euler XYZ in degrees, preserving old
 files and explicit update.rotation. Relative rotate must compose quaternions around
 fixed world X, then Y, then Z (right-hand rule), never add Euler components. Reuse
 the validated rotateAngles helper for the property panel: its rotation inputs are
-zero-based increments, reset after Applica. This prevents X/Z control fusion at
+zero-based increments, reset after Apply. This prevents X/Z control fusion at
 Y=±90° gimbal lock. Equivalent stored angles can change together; do not reinterpret
 old JSON. Rotation preserves object positions and each object's own pivot; do not
 silently introduce an assembly/group pivot.
@@ -86,7 +87,7 @@ early, reorder operations or allow missing group references in saved projects.
 Undeclared/malformed groups and attempts to target them before group remain errors.
 Mesh vertices come
 only from valid file imports or locally calculated subtraction, never from the AI.
-DeepSeek sees compact mesh data with triangleCount, not vertices. Send bounded
+The AI sees compact mesh data with triangleCount, not vertices. Send bounded
 session conversation before the final command/state: at most forty alternating
 user/assistant pairs within 128 KiB. Internal assistant summaries contain message,
 applied and objectIds, but convert them to labeled plain text before sending to the
@@ -101,7 +102,7 @@ Never persist chat to localStorage or project files; reset when opening JSON/exa
 
 Selected-object fields edit name/color, center XYZ, relative world rotation and type-specific
 dimensions, including imported/cut meshes and editable holes. Keep IDs/type/groups/
-vertices out of the form and lock originally planar mesh axes. Applica emits one
+vertices out of the form and lock originally planar mesh axes. Apply emits one
 update via applyOperations and prepare/commit, preserving IDs and undo/redo.
 Unchanged values do not add history. Reject invalid edits atomically, show inline
 errors and retain the draft; disable editing while asynchronous work is in progress.

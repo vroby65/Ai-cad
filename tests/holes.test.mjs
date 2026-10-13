@@ -64,7 +64,7 @@ test('Inquadratura ignora forme foro lontane e gestisce scene senza materiale vi
 test('Foro cilindrico: volume del poligono a 48 lati, esportazione senza forma negativa',()=>{
   const cylinder={...hole,type:'cylinder',dimensions:{radius:10,height:120}};
   near(volume(exportSTL(state([solid,cylinder]))),1000000-48/2*100*Math.sin(2*Math.PI/48)*100,1);
-  assert.throws(()=>exportSTL(state([cylinder])),/pieno|materiale/i);
+  assert.throws(()=>exportSTL(state([cylinder])),/solid|material/i);
 });
 test('Cavità cieca, sfera e cono interni sottraggono il loro volume',()=>{
   const pocket={...hole,dimensions:{x:20,y:20,z:40},position:[0,0,90]};
@@ -89,7 +89,7 @@ test('Gruppi isolano lo scavo; fori esterni non modificano il volume; sottrazion
   near(volume(exportSTL(state([target,grouped,other],[{id:'part',name:'Pezzo'}]))),1960000);
   near(volume(exportSTL(state([{...solid,groupId:'part'},hole],[{id:'part',name:'Pezzo'}]))),1000000);
   near(volume(exportSTL(state([solid,{...hole,position:[300,0,50]}]))),1000000);
-  assert.throws(()=>exportSTL(state([solid,{...hole,dimensions:{x:120,y:120,z:120}}])),/pieno|materiale/i);
+  assert.throws(()=>exportSTL(state([solid,{...hole,dimensions:{x:120,y:120,z:120}}])),/solid|material/i);
 });
 test('Facce coplanari e forme foro a dimensioni piccole conservano il volume atteso',()=>{
   near(volume(exportSTL(state([solid,{...hole,dimensions:{x:20,y:20,z:100}}]))),960000);
@@ -145,7 +145,7 @@ test('Il limite delle coppie pieno/foro include anche le mesh importate',()=>{
   const meshes=Array.from({length:33},(_,i)=>({...mesh,id:'body-'+i}));
   assert.throws(()=>validateProject(state([...meshes,hole])),/32/);
 });
-test('Scavare una superficie STL piana è rifiutato senza alterare la scena; fori lontani la lasciano intatta',()=>{
+test('Cutsre una superficie STL piana è rifiutato senza alterare la scena; fori lontani la lasciano intatta',()=>{
   const plane={...solid,type:'mesh',dimensions:{x:10,y:10,z:0},vertices:[-5,-5,0,5,-5,0,-5,5,0]};
   const view={meshes:new Map(),model:new THREE.Group(),selectedId:null,select(){}};
   CadView.prototype.sync.call(view,state([plane])); const mesh=view.meshes.get('body'),geometry=mesh.geometry;
