@@ -177,12 +177,12 @@ native file dialogs and downloads have not been clicked by an automated browser.
 
 ## GitHub publication and Pages
 
-The public [repository](https://github.com/vroby65/deepcad) uses main, English
+The public [repository](https://github.com/vroby65/Ai-cad) uses main, English
 documentation and metadata, the MIT license and a GitHub noreply commit identity.
-The [first GitHub Actions run](https://github.com/vroby65/deepcad/actions/runs/38132815691)
+The [first GitHub Actions run](https://github.com/vroby65/Ai-cad/actions/runs/38132815691)
 passed all 71 tests, JavaScript syntax checks and the Pages deployment.
 
-At initial publication, the live app at [GitHub Pages](https://vroby65.github.io/deepcad/)
+At initial publication, the live app at [GitHub Pages](https://vroby65.github.io/Ai-cad/)
 returned HTTP 200. Its landing page and all 28 public assets matched the local files
 by SHA-256, and the deployed project license matched LICENSE. Six private/source paths, including
 .env, legacy/api.php, legacy/README.md, AGENTS.md, package.json and this report,

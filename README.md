@@ -4,7 +4,7 @@ A conversational 3D modeling lab built with HTML5, JavaScript, Three.js and the
 a user-configured AI Responses gateway. Describe a shape, inspect the model and export STL.
 Designed for learning geometry, programming and AI, including CoderDojo activities.
 
-[Open AIcad](https://vroby65.github.io/deepcad/) ·
+[Open AIcad](https://vroby65.github.io/Ai-cad/) ·
 [Command format](COMMANDS.md) · [Architecture](ARCHITECTURE.md) ·
 [Verification report](docs/VERIFICATION.md)
 
@@ -27,8 +27,8 @@ sudo apt install php-cli firefox
 ~~~
 
 ~~~bash
-git clone https://github.com/vroby65/deepcad.git
-cd deepcad
+git clone https://github.com/vroby65/Ai-cad.git
+cd Ai-cad
 npm start
 ~~~
 
