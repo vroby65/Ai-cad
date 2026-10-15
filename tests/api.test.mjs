@@ -24,6 +24,17 @@ test('Richiesta ufficiale JSON con Flash fisso e chiave solo nell’header',asyn
   const context=JSON.parse(payload.input[0].content);
   assert.equal(context.project.objects[0].triangleCount,1); assert.equal('vertices' in context.project.objects[0],false);
 });
+test('Le istruzioni distinguono una seconda rotazione globale dalla posa Euler assoluta dei muri profilati',async t=>{
+  let payload;
+  t.mock.method(globalThis,'fetch',async (url,options)=>{
+    payload=JSON.parse(options.body);
+    return new Response(JSON.stringify(envelope({message:'No changes needed.',operations:[]})));
+  });
+  await interpretAI('Create two perpendicular profiled walls.',emptyProject(),null,{key:'test-key',url:'https://gateway.example',model:'test-model'});
+  assert.match(payload.instructions,/upright profiled wall/i);
+  assert.match(payload.instructions,/create[^\n]*\[90,0,0\][^\n]*rotate[^\n]*delta:\[0,0,90\]/i);
+  assert.match(payload.instructions,/do not use[^\n]*\[90,0,90\]/i);
+});
 test('DeepSeek può proporre cilindri foro per i vani ruota senza eliminare le ruote',async t=>{
   const {readFile}=await import('node:fs/promises');
   const car=JSON.parse(await readFile(new URL('../public/examples/car.json',import.meta.url),'utf8'));

@@ -52,6 +52,10 @@ At Y=±90° this Euler representation has gimbal lock: X/Z are not independent.
 Use relative rotate for independent turns on fixed world axes. Equivalent Euler
 values may change together after quaternion composition; saved old poses stay valid.
 Unrotated cylinders/cones align with Z; the cone tip is +Z.
+For example, make an extruded profile into an upright wall with absolute rotation
+`[90,0,0]`. To turn that upright wall 90° around scene Z, follow creation or
+duplication with `rotate` delta `[0,0,90]`. Absolute `[90,0,90]` is not that
+sequence: it keeps local Z toward world −Y and makes the profile length vertical.
 Color is #RRGGBB. GroupId is null or an existing group ID.
 Numeric strings, booleans, null and nonfinite values are not numbers.
 
@@ -170,6 +174,8 @@ The object in create must follow the primitive schema.
   absolute Euler XYZ pose. An existing [90,0,0] cylinder points toward −Y; rotate
   delta:[0,0,90] turns that axis toward +X. This differs from update.rotation:
   [90,0,90], which sets an absolute intrinsic pose and keeps that axis toward −Y.
+  The same rule prevents perpendicular profiled walls from turning their outline
+  vertical: create or duplicate the upright wall first, then rotate it around world Z.
   Each member rotates on its own center, with no common group pivot or position orbit.
 - Duplicate copies one object with a new ID and offset ±100000 mm, outside groups.
 - Ids is a nonempty list of 1–200 distinct object/group IDs. Groups expand to

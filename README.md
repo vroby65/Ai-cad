@@ -226,6 +226,9 @@ JSON retains absolute Euler XYZ orientations for compatibility; its equivalent
 numbers can change together after a relative turn. Request an absolute orientation
 through chat when needed. Each part rotates about its own center; groups do not
 orbit around a shared pivot.
+For compound turns, apply them as separate world-axis increments. In particular,
+an upright profiled wall starts at absolute `[90,0,0]`; turning it around world Z
+must use a subsequent relative rotation, not absolute `[90,0,90]`.
 Moving/resizing an editable hole recalculates its cut. Editing is disabled while
 an AI request or file load is in progress.
 

@@ -69,7 +69,10 @@ confirmation. Metadata-shaped replies remain invalid and receive a specific erro
 The contract also distinguishes world positions from local shape orientation and
 recommends X for vehicle length, Y for width and Z for height. This addresses the
 reported aircraft's vertical wings and misplaced tail at the instruction level;
-the geometry engine does not silently rewrite valid model coordinates.
+the geometry engine does not silently rewrite valid model coordinates. It also gives
+profiled walls a concrete compound-orientation rule: create the upright `[90,0,0]`
+pose, then use relative world-Z rotation for perpendicular copies. This avoids the
+intrinsic `[90,0,90]` pose that turns the profile length vertical.
 Failed turns record applied:false with a safe error, never rejected raw JSON or
 unexecuted operations. In-flight turns are excluded. The API accepts only alternating
 user/assistant pairs (at most forty), trimming older whole pairs to a 128 KiB UTF-8
