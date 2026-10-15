@@ -1,7 +1,7 @@
 # AIcad
 
 A conversational 3D modeling lab built with HTML5, JavaScript, Three.js and the
-a user-configured AI Responses gateway. Describe a shape, inspect the model and export STL.
+a user-configured AI Responses gateway. Describe a shape, inspect the model and export STL or OBJ.
 Designed for learning geometry, programming and AI, including CoderDojo activities.
 
 [Open AIcad](https://vroby65.github.io/Ai-cad/) ·
@@ -187,8 +187,10 @@ manifold output, printability or mechanical precision. Solids are not fused.
 - **Importa STL** adds ASCII/binary STL without replacing the scene. Maximum
   **10 MiB / 20000 triangles**. Coordinates are preserved; units are interpreted
   as mm because STL stores no unit metadata. Meshes can be transformed and cut.
-- **Esporta STL** downloads the evaluated model, including cuts and transformations,
-  without tools, grid, axes or selection outlines.
+- **Export STL / Export OBJ** download the evaluated triangulated model, including
+  cuts and transformations, without tools, grid, axes or selection outlines. OBJ
+  keeps each solid under its stable object ID and uses millimeter coordinates; it
+  exports geometry only, without an MTL material/color file.
 - **Undo / Redo** retain 40 independent snapshots. An edit after undo
   discards the redo branch. Opening JSON replaces the project and history.
 
@@ -299,7 +301,7 @@ npm test
 node --import ./tests/register-three.mjs --test tests/*.test.mjs
 ~~~
 
-The suite uses real Three.js geometries, STL loading/export and CSG. It checks
+The suite uses real Three.js geometries, STL loading/export, OBJ export and CSG. It checks
 JSON validation, IDs, atomic operations, meshes, removed volume, raycast through
 holes, round trips, undo/redo, chat, key/URL storage, gateway connection, resize events and HTTP.
 Fetches and DOM/pointer interactions are simulated; no paid calls occur.
@@ -310,7 +312,7 @@ Manual Firefox checks:
 1. Open an example; test selection, rotate, zoom, pan and fit.
 2. Enter a key, send a command and inspect explanation, operations and JSON.
 3. Drill body and fenders while keeping wheels; undo/redo.
-4. Import a closed STL, drill, export and reopen it.
+4. Import a closed STL, drill it, export STL and OBJ, then reopen the STL.
 5. Save/reopen JSON with a mesh and editable tools; check the cuts.
 6. Drag the chat separator, use its keyboard controls and resize the window.
 7. Reload and check remembered key/URL and gateway status; clear during a pending request.
@@ -319,7 +321,7 @@ Manual Firefox checks:
 10. Edit primitive/mesh/hole values, undo/redo, and confirm the next AI command
     uses the manually updated state.
 11. Open Forme complesse; edit profiles, modifier axes/angles/factors and the vase
-    hole, then save/reopen JSON and export/reimport STL. Deform a simple imported
+    hole, then save/reopen JSON, export/reimport STL and inspect the OBJ. Deform a simple imported
     closed STL and ask the chat to remove its modifiers.
 
 Screenshots will be added to docs/screenshots/ after a real graphical check.

@@ -21,7 +21,7 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/boolean.js | Local CSG subtraction, baked meshes and cache signatures |
 | js/state.js | Forty independent undo/redo snapshots |
 | js/files.js | Validated JSON, size checks and local downloads |
-| js/import.js, js/export.js | ASCII/binary STL import and evaluated STL export |
+| js/import.js, js/export.js | ASCII/binary STL import and evaluated STL/OBJ export |
 | examples/, vendor/ | Starter models, pinned dependencies and licenses |
 | scripts/serve.mjs | Loopback-only static server |
 | scripts/diagnostics-server.mjs, js/local-diagnostics.js | Optional private local diagnostic snapshots |
@@ -232,8 +232,10 @@ guarantee manifold output, printability or mechanical precision, and does not fu
 separate full objects.
 
 CadView.prepare computes changed geometries before mutating scene or history,
-disposing prepared results on failure. Export evaluates the same geometry as the
-view, skips tools and fully consumed solids, and refuses a material-free export.
+disposing prepared results on failure. STL and OBJ export evaluate the same geometry
+as the view, skip tools and fully consumed solids, and refuse a material-free export.
+OBJ applies world transforms, emits triangulated faces grouped by stable object ID
+in millimeters, and deliberately omits MTL/material data.
 
 ## Files and history
 

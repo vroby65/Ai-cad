@@ -100,3 +100,16 @@ test('Changing gateway URL retargets requests; Clear forgets only the key',async
   assert.equal(storage.get('unrelated'),'keep');
   assert.equal(get('gateway-status').textContent,'Gateway: not connected');
 });
+
+test('Export OBJ scarica la geometria corrente in millimetri',async t=>{
+  const env=await setup(t),{get}=env;
+  get('prompt').value='Create a cube';env.submit();await env.idle();
+  let blob;t.mock.method(URL,'createObjectURL',value=>{blob=value;return 'blob:test';});
+  get('export-obj').click();
+  assert.equal(blob.type,'model/obj');
+  const obj=await blob.text();
+  assert.match(obj,/^# AIcad OBJ export\n# Units: millimeters\n/);
+  assert.match(obj,/^o cube$/m);
+  assert.equal(obj.split('\n').filter(line=>line.startsWith('f ')).length,12);
+  assert.match(get('status').textContent,/OBJ ready to download/);
+});

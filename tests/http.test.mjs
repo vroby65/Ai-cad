@@ -21,7 +21,7 @@ test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   assert.equal(html.includes('id="activity-list"'),false);
   assert.equal(html.includes('id="mode"'),false);
   assert.equal(html.includes('demo-command'),false);
-  assert.match(html,/id="import-stl"/); assert.match(html,/id="export"/);
+  assert.match(html,/id="import-stl"/); assert.match(html,/id="export"/); assert.match(html,/id="export-obj"/);
   const modules=await readFile(new URL('../public/js/app.js',import.meta.url),'utf8');
   assert.equal(modules.includes('api.php'),false);
   assert.equal(modules.includes('demo.js'),false);

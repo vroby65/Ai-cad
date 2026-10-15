@@ -3,7 +3,7 @@ import { interpretAI, getModels } from './api.js';
 import { readKey, rememberKey, readURL, rememberURL } from './account.js';
 import { applyOperations, validateProject, newId } from './project.js';
 import { CadView } from './renderer.js';
-import { exportSTL } from './export.js';
+import { exportOBJ, exportSTL } from './export.js';
 import { importSTL, MAX_STL_BYTES } from './import.js';
 import { decodeProject, encodeProject, download, filename, MAX_FILE_BYTES } from './files.js';
 import { ChatView } from './chat.js';
@@ -43,7 +43,7 @@ function message(text,error=false) {
 function setBusy(value) {
   busy=value;
   propertyEditor.setBusy(value);
-  for(const id of ['run','new','open','save','export','import-stl','api-key','gateway-url','clear-key','object-hole']) $(id).disabled=value;
+  for(const id of ['run','new','open','save','export','export-obj','import-stl','api-key','gateway-url','clear-key','object-hole']) $(id).disabled=value;
   document.querySelectorAll('[data-example]').forEach(b=>b.disabled=value);
   $('undo').disabled=value||!history.canUndo; $('redo').disabled=value||!history.canRedo;
   $('command-form').setAttribute('aria-busy',String(value));
@@ -217,6 +217,10 @@ $('save').addEventListener('click',()=>{
 });
 $('export').addEventListener('click',()=>{
   try { const state=history.current; download(exportSTL(state),filename(state.name,'stl'),'model/stl'); message('Triangulated STL ready to download (coordinates in mm).'); }
+  catch(error) { message(error.message,true); }
+});
+$('export-obj').addEventListener('click',()=>{
+  try { const state=history.current; download(exportOBJ(state),filename(state.name,'obj'),'model/obj'); message('Triangulated OBJ ready to download (coordinates in mm; geometry only).'); }
   catch(error) { message(error.message,true); }
 });
 $('open').addEventListener('click',()=>{
