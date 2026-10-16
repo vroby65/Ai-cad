@@ -31,7 +31,8 @@ const history=new History(emptyProject());
 const chat=new ChatView($('chat-messages'));
 let selectedId=null, busy=false, view;
 let connectionRequest=null,connectionVersion=0,connectionTimer;
-let activeModel=null;
+let activeModel=null,availableModels=[];
+$('reasoning-effort').value='medium';
 const propertyEditor=new PropertyEditor($('property-form'),$('property-fields'),$('property-error'),operation=>{
   commit(applyOperations(history.current,{operations:[operation]}));
   message('Object properties updated.');
@@ -43,7 +44,8 @@ function message(text,error=false) {
 function setBusy(value) {
   busy=value;
   propertyEditor.setBusy(value);
-  for(const id of ['run','new','open','save','export','export-obj','import-stl','api-key','gateway-url','clear-key','object-hole']) $(id).disabled=value;
+  for(const id of ['run','new','open','save','export','export-obj','import-stl','api-key','gateway-url','clear-key','reasoning-effort','object-hole']) $(id).disabled=value;
+  $('model-select').disabled=value||!activeModel;
   document.querySelectorAll('[data-example]').forEach(b=>b.disabled=value);
   $('undo').disabled=value||!history.canUndo; $('redo').disabled=value||!history.canRedo;
   $('command-form').setAttribute('aria-busy',String(value));
@@ -100,6 +102,7 @@ async function execute() {
   try {
     const modelJson=await interpretAI(prompt,before,selectedId,{
       key:$('api-key').value,url:$('gateway-url').value,model:activeModel,
+      effort:$('reasoning-effort').value,
       messages,
       onDiagnostic:(stage,data)=>diagnostics.record(stage,data),
       onOutput:content=>{diagnostics.record('output',{content});chat.output(turn,content);}
@@ -140,23 +143,35 @@ function keyStatus() {
   const ready=$('api-key').value.trim()&&$('gateway-url').value.trim();
   message(ready ? 'AI gateway configured.' : 'Enter the gateway URL:port and API key at the top.', !ready);
 }
-function cancelConnection() {
+function resetModels() {
+  const option=node('option','Model');option.value='';
+  $('model-select').replaceChildren(option);$('model-select').value='';$('model-select').disabled=true;
+  availableModels=[];
+}
+function cancelConnection(reset=false) {
   clearTimeout(connectionTimer); connectionVersion++; connectionRequest?.abort(); connectionRequest=null;
-  activeModel=null;
+  activeModel=null;$('model-select').disabled=true;
+  if(reset) resetModels();
 }
 async function refreshConnection() {
+  const previous=$('model-select').value;
   cancelConnection();
   const key=$('api-key').value.trim(),url=$('gateway-url').value.trim(),version=connectionVersion;
   const output=$('gateway-status');
   output.className='';output.textContent=key&&url ? 'Connecting…' : 'Gateway: not connected';
-  if(!key||!url) return;
+  if(!key||!url) { resetModels();return; }
   connectionRequest=new AbortController();
   try {
     const models=await getModels(url,key,connectionRequest.signal);
     if(version!==connectionVersion) return;
-    activeModel=models[0].id;output.textContent='AI: '+models[0].name;
+    availableModels=models;
+    $('model-select').replaceChildren(...models.map(model=>{const option=node('option',model.name);option.value=model.id;return option;}));
+    activeModel=models.some(model=>model.id===previous) ? previous : models[0].id;
+    $('model-select').value=activeModel;$('model-select').disabled=busy;
+    output.textContent='AI: '+models.find(model=>model.id===activeModel).name;
   } catch(error) {
     if(version!==connectionVersion) return;
+    resetModels();
     output.textContent=error.message;output.className='error';
   } finally { if(version===connectionVersion) connectionRequest=null; }
 }
@@ -197,7 +212,7 @@ function saveKey() {
   const saved=rememberKey(undefined,$('api-key').value);
   const hasKey=Boolean($('api-key').value.trim());
   $('key-note').textContent=saved ? hasKey ? 'Key saved in this browser · use Clear to forget it.' : 'Key removed from the browser.' : hasKey ? 'Browser storage unavailable · the key is kept only in this page.' : 'Unable to remove the key from browser storage.';
-  keyStatus(); cancelConnection();
+  keyStatus(); cancelConnection(true);
   if(!saved) message($('key-note').textContent,true);
   $('gateway-status').className='';
   $('gateway-status').textContent='Gateway: not connected';
@@ -209,8 +224,13 @@ $('gateway-url').addEventListener('input',()=>{
   saveKey();
   if(!saved) message('Browser storage unavailable; the URL is kept only in this page.',true);
 });
+$('model-select').addEventListener('change',()=>{
+  activeModel=$('model-select').value;
+  const model=availableModels.find(item=>item.id===activeModel);
+  if(model) $('gateway-status').textContent='AI: '+model.name;
+});
 $('clear-key').addEventListener('click',()=>{ $('api-key').value=''; saveKey(); $('api-key').focus(); });
-window.addEventListener('pagehide',cancelConnection);
+window.addEventListener('pagehide',()=>cancelConnection());
 $('save').addEventListener('click',()=>{
   try { const state=history.current; download(encodeProject(state),filename(state.name,'json'),'application/json'); message('JSON file ready to download.'); }
   catch(error) { message(error.message,true); }

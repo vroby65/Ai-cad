@@ -1,14 +1,19 @@
 # Verification report
 
-## AIcad update — 13 October 2026
+## AIcad update — 13–16 October 2026
 
 - Rebranded the active app as AIcad; UI labels, accessibility text, errors,
   model instructions, operation explanations and starter-project names are English.
 - Added separate gateway URL:port and API-key storage. Clearing the key preserves
   the URL and unrelated storage; old DeepSeek keys are not reused.
 - Catalog and Responses requests target the selected gateway, with account model
-  discovery and the existing atomic CAD validation. No paid requests were made.
-- `npm test`: 140 passed. JavaScript syntax checks and `git diff --check` passed.
+  discovery and the existing atomic CAD validation. No paid requests were made for
+  this update.
+- Model and reasoning selectors use the current catalog model and one of
+  low/medium/high/xhigh/max on the next request without reloading the app.
+- Editable cut results allow up to 50000 triangles while deformation, imported STL
+  and saved/baked mesh limits remain at 20000 triangles.
+- `npm test`: 146 passed. JavaScript syntax checks and `git diff --check` passed.
 - DOM tests cover URL retargeting, Clear, Enter/IME behavior, chat, errors and
   geometry; transport tests use fake credentials and mock model responses.
 - Pi gateway tests: five passed, including restricted browser origins and
@@ -16,8 +21,8 @@
   origin returned 403. No router, Tor, SSH or firewall settings were changed.
 - Browser runtime reported no connected browsers, so visual/WebGL and actual
   browser local-network permission checks remain unverified.
-- Gateway OAuth is still pending: real model inference, Plus permissions and
-  actual token renewal are not confirmed by the simulated tests.
+- Prior live gateway inference confirmed OAuth and current plan access. This update
+  used mocked fetches and did not repeat paid inference or near-expiry token renewal.
 
 ## Earlier DeepCAD verification notes
 
@@ -26,7 +31,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**140 tests passed** with npm test. The suite covers:
+**146 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -110,6 +115,7 @@ no PHP. Tests do not use real keys or paid API requests.
   existing work, cancellation preserves it, and acceptance clears model/selection/
   chat/context/draft/undo/redo while keeping the key and unrelated storage. Busy
   requests block resets; the next command receives an empty model/conversation.
+  Model and reasoning changes are also verified against consecutive request payloads.
 - Conversation memory: clarification replies, stable affected IDs, pending-turn
   exclusion, failures marked unapplied, whole recent pairs within a 128 KiB UTF-8
   budget, strict roles and unchanged caller data. Rejected raw JSON is not sent.

@@ -31,8 +31,11 @@ requests and resets the model display. Leave legacy DeepSeek storage untouched.
 Keys never enter project state, exports, logs, repository files or prompts.
 Send them only in Authorization headers to the user-configured HTTP(S) gateway,
 with credentials/referrers/redirects omitted. Reject credentials/query/fragment
-in URLs. Use /v1/models and /v1/responses, choosing the first visible account model.
-No model selector, demo mode, balance endpoint or fixed DeepSeek model remains.
+in URLs. Use /v1/models and /v1/responses. Populate the model selector with visible
+account models, default to the first, retain the current choice across catalog
+refreshes when available and apply selector changes to the next request. Send the
+reasoning selector as Responses reasoning.effort with low/medium/high/xhigh/max and
+default medium. No demo mode, balance endpoint or fixed DeepSeek model remains.
 Use Responses instructions/input and accept the Pi gateway output_text JSON.
 Distinguish empty/truncated output, HTTP errors, transport failures and local
 schema/geometry failures. Keep the gateway LAN-only; CORS can allow the Pages
@@ -117,7 +120,7 @@ Apply them before cuts. Preserve source type/profile/vertices and stable IDs; ba
 mesh replacements must remove profile/modifiers to prevent double application.
 Cache signatures include target/tool profiles and modifiers. The property editor
 exposes point coordinates and existing modifier axes/parameters with undo/redo.
-Keep angular/radius/factor bounds and the 20000-triangle/10000-mm evaluation limits;
+Keep angular/radius/factor bounds and the 20000-triangle/10000-mm deformation limits;
 reject foldovers and invalid batches without changing the scene. Normals need the
 inverse Jacobian; sparse STL and box surfaces must be subdivided before bending or
 twisting. Do not weaken complexity limits or claim NURBS/lofts/precision CAD support.
@@ -141,7 +144,7 @@ Create/update from AI cannot supply targetIds; subtract manages them. Prune link
 when targets are deleted, retaining [] to prevent implicit group fallback. Keep
 tool IDs stable; changing center/rotation/dimensions must restore the old material.
 Include linked targets/legacy meshes in the 32-pair limit; retain
-8-hole and 20000-result-triangle limits. Keep hole in the AI create/update contract.
+8-hole, 50000 editable-cut-triangle and 20000 saved-mesh limits. Keep hole in the AI create/update contract.
 Tools are invisible and not exported, but selectable/editable in the object panel.
 Raycasts, selection outlines and fit ignore them. View and export use the same
 evaluated geometry. Prepare geometry before committing, dispose failures and

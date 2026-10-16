@@ -1,7 +1,7 @@
 # AIcad
 
-A conversational 3D modeling lab built with HTML5, JavaScript, Three.js and the
-a user-configured AI Responses gateway. Describe a shape, inspect the model and export STL or OBJ.
+A conversational 3D modeling lab built with HTML5, JavaScript, Three.js and a
+user-configured AI Responses gateway. Describe a shape, inspect the model and export STL or OBJ.
 Designed for learning geometry, programming and AI, including CoderDojo activities.
 
 [Open AIcad](https://vroby65.github.io/Ai-cad/) ·
@@ -45,7 +45,7 @@ Serve **only public/**, never the repository root. JavaScript modules need HTTP,
 not file://. The former PHP backend is preserved in [legacy/](legacy/README.md)
 and is not used by the browser application.
 
-## Gateway URL:port and API key
+## Gateway, model and reasoning effort
 
 Enter your gateway's address (including its port) and API key beside AIcad.
 For example, `http://192.168.1.10:18765`. A bare `address:port` is accepted,
@@ -53,11 +53,15 @@ and a trailing `/v1` is normalized. Credentials, queries and fragments are rejec
 in URLs. The key is sent only in Authorization headers to the selected gateway.
 
 The adapter uses `GET /v1/models` and `POST /v1/responses`, matching Pi AI Gateway.
-The first visible model returned by the account catalog is selected automatically.
-The header shows connection errors or the chosen model; no DeepSeek credit API is
-called. The gateway handles ChatGPT OAuth and token renewal. Sign in manually on
-the gateway before making AI requests; Plus access still depends on granted plan
-permission and limits. There is no demo mode or automatic paid retry.
+The model selector is populated from the visible account catalog and initially
+chooses its first entry. The reasoning selector sends `low`, `medium`, `high`,
+`xhigh` or `max` as `reasoning.effort`, with `medium` as the default. Change either
+selector at any time between commands; the next request uses the new values without
+reloading the app. A request already in progress keeps the values it started with.
+The header also shows connection errors; no DeepSeek credit API is called. The
+gateway handles ChatGPT OAuth and token renewal. Sign in manually on the gateway
+before making AI requests; Plus access still depends on granted plan permission
+and limits. There is no demo mode or automatic paid retry.
 
 URL and key are saved separately in this browser's localStorage under
 `aicad.gateway-url` and `aicad.api-key`. **Clear** forgets only the key and cancels
@@ -169,10 +173,12 @@ and consumes tools. Old projects already saved as such meshes, and cut STL impor
 do not contain the original tool or missing material. Those old openings cannot be
 moved independently: use undo if available or reopen the project before that cut.
 
-Limits: **8 tools**, **32 solid/tool pairs**, **20000 triangles per cut result**.
+Limits: **8 tools**, **32 solid/tool pairs**, **50000 triangles per editable cut result**.
 For explicit subtract, pairs count only its specified targets and tools. Temporary
 tools created and linked or consumed in the same atomic command do not count against unrelated
 scene objects. The editable-hole pair limit applies to the completed project.
+Finalized `bake:true` meshes retain the separate 20000-triangle saved-mesh limit.
+If an editable result exceeds its limit, the error reports the generated triangle count.
 STL must represent a closed solid, not a plane. Topology is not exhaustively
 checked. BSP subtraction uses triangulated surfaces and does not guarantee
 manifold output, printability or mechanical precision. Solids are not fused.

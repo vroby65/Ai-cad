@@ -32,7 +32,7 @@ function toCSG(geometry) {
 }
 function fromCSG(csg) {
   const triangles=csg.polygons.reduce((count,polygon)=>count+polygon.vertices.length-2,0);
-  if(triangles>MAX_BOOLEAN_TRIANGLES) throw new Error('Cut too complex: maximum 20000 triangles per part.');
+  if(triangles>MAX_BOOLEAN_TRIANGLES) throw new Error(`Cut too complex: ${triangles} triangles generated; maximum ${MAX_BOOLEAN_TRIANGLES} per part.`);
   const positions=[],normals=[];
   for(const polygon of csg.polygons) for(let i=2;i<polygon.vertices.length;i++) {
     for(const vertex of [polygon.vertices[0],polygon.vertices[i-1],polygon.vertices[i]]) {

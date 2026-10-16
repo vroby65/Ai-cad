@@ -31,7 +31,7 @@ test('Gateway catalog chooses an account model and Responses uses the selected U
   const url='http://192.168.1.10:18765',key='fake-gateway-key';
   const models=await api.getModels(url,key);
   assert.equal(models[0].id,'account-model');
-  const result=await api.interpretAI('Draw a red cube.',emptyProject(),null,{url,key,model:models[0].id});
+  const result=await api.interpretAI('Draw a red cube.',emptyProject(),null,{url,key,model:models[0].id,effort:'high'});
   assert.deepEqual(result,reply);
   assert.deepEqual(requests.map(r=>r.url),[url+'/v1/models',url+'/v1/responses']);
   for(const {options} of requests) {
@@ -42,6 +42,7 @@ test('Gateway catalog chooses an account model and Responses uses the selected U
   }
   const payload=JSON.parse(requests[1].options.body);
   assert.equal(payload.model,'account-model');
+  assert.deepEqual(payload.reasoning,{effort:'high'});
   assert.ok(Array.isArray(payload.input));
   assert.match(payload.instructions,/English/);
   assert.equal(JSON.stringify(payload).includes(key),false);

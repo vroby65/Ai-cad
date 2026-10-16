@@ -33,7 +33,9 @@ The first paths are relative to public/.
 
 The browser sends recent conversation pairs, the command, selectedId and compact
 project to the configured gateway's /v1/responses endpoint. The payload contains
-model, instructions and input; the first visible model from /v1/models is used.
+the currently selected model and reasoning effort, instructions and input. The model
+selector is populated from the visible /v1/models catalog and defaults to its first
+entry; changing either selector affects the next request without reloading.
 The Pi gateway performs OAuth and consumes the mandatory upstream stream through
 response.completed before returning compact JSON. Browser replies are synchronous.
 Mesh vertices are omitted and triangleCount added. The key occurs only in the
@@ -193,8 +195,8 @@ subtract accepts explicit full-object ids and primitive hole toolIds. project.js
 validates references, roles and pair limits, then calls carveObject. boolean.js
 transforms tools into target-local coordinates and subtracts polygons using the
 pinned MIT THREE-CSGMesh BSP core. External bounding boxes and degenerate input
-triangles are skipped. Results exceeding 20000 triangles or containing nonfinite
-values are rejected.
+triangles are skipped. Editable results exceeding 50000 triangles or containing
+nonfinite values are rejected with the generated triangle count.
 
 By default, the source solids and tools stay in project.objects. Subtract records
 targetIds on tools, containing expanded full-object IDs and merging existing explicit
@@ -262,10 +264,13 @@ debounce. Abort/version checks prevent stale model results after credential edit
 POST /v1/responses has a 270-second deadline. Redirects, retries and cookies are
 omitted. Credentials, query strings and fragments are rejected in gateway URLs.
 
-The header contains brand, URL:port, key, Clear and gateway/model status, with the
-toolbar below. Narrow screens wrap credentials. Chat resizing, pointer capture,
-keyboard behavior and non-persisted height remain unchanged. All app-owned labels,
-errors, examples, explanations and model instructions are English.
+The header contains brand, URL:port, key, Clear, model and reasoning-effort selectors,
+and gateway/model status, with the toolbar below. Narrow screens wrap these controls.
+Both selectors are disabled while a request is in progress, and the model selector
+also stays disabled until a valid catalog is available; a running request keeps its
+initial settings. Chat resizing, pointer capture, keyboard behavior and non-persisted
+height remain unchanged. All app-owned labels, errors, examples, explanations and
+model instructions are English.
 
 The Pi permits CORS only for the Pages origin and loopback development origins.
 Browser local-network permission can be needed when Pages HTTPS contacts LAN HTTP.

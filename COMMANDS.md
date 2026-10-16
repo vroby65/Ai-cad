@@ -197,7 +197,7 @@ The object in create must follow the primitive schema.
 A tool is a primitive with hole:true. Subtract accepts only full objects in ids
 and primitive hole tools in toolIds. Both lists are nonempty/distinct; groups can
 expand, but must contain objects with the correct roles.
-Limit: 8 tools, 32 full/tool pairs, 20000 triangles per resulting piece.
+Limit: 8 tools, 32 full/tool pairs, 50000 triangles per editable resulting piece.
 The pair count is the number of expanded targets times the number of tools for
 this subtract operation. Unrelated scene objects do not contribute. Creating tools
 with groupId:null earlier in the same batch does not trigger editable preview checks
@@ -247,8 +247,9 @@ from the object panel and excluded from STL. JSON retains original geometry/tool
 Deleting a target removes its ID from tool lists, retaining empty lists. Setting
 hole:false retains the inactive link so enabling the hole again restores the cut.
 
-Maximum 8 tools, 32 relevant full/tool pairs including meshes, and 20000 result
-triangles per piece. Planar or zero-volume meshes cannot be cut; a nonintersecting
+Maximum 8 tools, 32 relevant full/tool pairs including meshes, and 50000 result
+triangles per editable piece. A finalized `bake:true` mesh must still remain within
+the separate 20000-triangle mesh limit. Planar or zero-volume meshes cannot be cut; a nonintersecting
 tool leaves a planar surface unchanged. Closed topology is required for correct
 results but is not exhaustively checked.
 
@@ -280,13 +281,16 @@ Authorization: Bearer with the user's gateway key; cookies, referrers and redire
 are omitted. The key never enters JSON bodies or geometry state.
 
 Models may use the ChatGPT-plan `{models:[{slug,visibility,display_name}]}` catalog
-or the OpenAI-compatible `{data:[{id}]}` catalog. The first visible model is used.
-There is no model selector and no fixed DeepSeek model or balance endpoint.
+or the OpenAI-compatible `{data:[{id}]}` catalog. Visible models populate the model
+selector and the first entry is the initial choice. The current model and reasoning
+effort can be changed between requests without reloading. There is no fixed DeepSeek
+model or balance endpoint.
 
-POST payload: `{model,instructions,input,store:false,stream:false}`. Instructions
-contain the English CAD contract. Input contains bounded prior user/assistant pairs
-followed by serialized `{command,selectedId,project}` context. Commands contain
-1–2000 characters. Mesh vertices are omitted and triangleCount added.
+POST payload: `{model,instructions,input,reasoning:{effort},store:false,stream:false}`.
+Effort is one of `low`, `medium`, `high`, `xhigh` or `max`, initially `medium`.
+Instructions contain the English CAD contract. Input contains bounded prior
+user/assistant pairs followed by serialized `{command,selectedId,project}` context.
+Commands contain 1–2000 characters. Mesh vertices are omitted and triangleCount added.
 Internal `{message,applied,objectIds}` memory is converted to labeled plain text;
 it never becomes a response template. Current state and selection are authoritative.
 At most 40 whole pairs within 128 KiB UTF-8 are sent, without persisting chat.

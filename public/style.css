@@ -847,6 +847,13 @@ textarea::placeholder {
   max-width:440px;
   min-width:0;
 }
+.model-field {
+  flex:0 1 190px;
+  min-width:110px;
+}
+.effort-field {
+  flex:0 0 90px;
+}
 .hole-control {
   display:flex;
   align-items:center;
@@ -868,7 +875,7 @@ textarea::placeholder {
   color:#ffaaa4;
   border-color:#493640;
 }
-.credentials input {
+.credentials input,.credentials select {
   width:100%;
   min-width:0;
   height:34px;
@@ -899,6 +906,12 @@ textarea::placeholder {
   .url-field,.key-field {
     flex-basis:calc(50% - 4px);
     max-width:none;
+  }
+  .model-field {
+    flex:1 1 60%;
+  }
+  .effort-field {
+    flex:1 1 30%;
   }
   .credentials output {
     flex-basis:100%;

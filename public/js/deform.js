@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { MAX_BOOLEAN_TRIANGLES } from './limits.js';
+import { MAX_DEFORMATION_TRIANGLES } from './limits.js';
 
 export function validateModifiers(modifiers) {
   if(!Array.isArray(modifiers) || modifiers.length>6) throw new Error('Deformations: maximum 6 modifiers.');
@@ -31,7 +31,7 @@ function subdivide(geometry,axis,origin,step,steps=24) {
   function emit(triangle) {
     const [a,b,c]=triangle.map(v=>new THREE.Vector3(...v.p));
     if(new THREE.Vector3().crossVectors(b.sub(a),c.sub(a)).lengthSq()<1e-20) return;
-    if(positions.length/9>=MAX_BOOLEAN_TRIANGLES) throw new Error('Deformation too complex: maximum 20000 triangles. Reduce mesh complexity.');
+    if(positions.length/9>=MAX_DEFORMATION_TRIANGLES) throw new Error(`Deformation too complex: maximum ${MAX_DEFORMATION_TRIANGLES} triangles. Reduce mesh complexity.`);
     for(const vertex of triangle){positions.push(...vertex.p);normals.push(...vertex.n);}
   }
   for(let i=0;i<count;i+=3) {

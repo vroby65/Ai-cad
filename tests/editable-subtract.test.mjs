@@ -9,6 +9,7 @@ import { importSTL } from '../public/js/import.js';
 import { CadView } from '../public/js/renderer.js';
 import { interpretAI } from '../public/js/api.js';
 import { explain } from '../public/js/explain.js';
+import { MAX_BOOLEAN_TRIANGLES, MAX_DEFORMATION_TRIANGLES, MAX_STL_TRIANGLES } from '../public/js/limits.js';
 
 const body={id:'body',type:'box',name:'Corpo',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
 const tool={...body,id:'tool',name:'Foro modificabile',hole:true,dimensions:{x:20,y:20,z:120}};
@@ -25,6 +26,12 @@ function volume(state) {
   return sum;
 }
 const near=(actual,expected)=>assert.ok(Math.abs(actual-expected)<1,`${actual} != ${expected}`);
+
+test('Editable cuts allow 50000 triangles without raising the saved mesh limit',()=>{
+  assert.equal(MAX_BOOLEAN_TRIANGLES,50000);
+  assert.equal(MAX_DEFORMATION_TRIANGLES,20000);
+  assert.equal(MAX_STL_TRIANGLES,20000);
+});
 
 test('Subtract conserva base e foro; spostare o ridimensionare il foro ripristina il vecchio materiale',()=>{
   const drilled=drill();assert.deepEqual(drilled.objects[0],body);

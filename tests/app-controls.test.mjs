@@ -18,7 +18,7 @@ class Element extends EventTarget {
 const cube={id:'cube',type:'box',name:'Cubo',dimensions:{x:100,y:100,z:100},position:[0,0,50],rotation:[0,0,0],color:'#ff0000',groupId:null};
 const response=()=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify({message:'Ho creato un cubo.',operations:[{op:'create',object:cube}]})}}]}));
 let instance=0;
-async function setup(t){
+async function setup(t,models=[{slug:'test-model',visibility:'list'}]){
   const elements=new Map(),get=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
   const storage=new Map([['aicad.api-key','fake-test-key'],['aicad.gateway-url','https://gateway.example'],['unrelated','keep']]),requests=[];
   const env={get,storage,requests,gatewayRequests:[],confirmations:0,accept:true,hold:false,reply:response};let release;
@@ -31,7 +31,7 @@ async function setup(t){
   }
   t.mock.method(globalThis,'fetch',async(url,options)=>{
     env.gatewayRequests.push({url,authorization:options.headers.Authorization});
-    if(url.endsWith('/models'))return new Response(JSON.stringify({models:[{slug:'test-model',visibility:'list'}]}));
+    if(url.endsWith('/models'))return new Response(JSON.stringify({models}));
     requests.push(JSON.parse(options.body));
     if(env.hold)return new Promise(resolve=>{release=()=>resolve(env.reply());});
     return env.reply();
@@ -99,6 +99,30 @@ test('Changing gateway URL retargets requests; Clear forgets only the key',async
   assert.equal(get('gateway-url').value,'https://other-gateway.example');
   assert.equal(storage.get('unrelated'),'keep');
   assert.equal(get('gateway-status').textContent,'Gateway: not connected');
+  assert.equal(get('model-select').value,'');assert.equal(get('model-select').disabled,true);
+});
+
+test('Model and reasoning selectors change the next request without reloading',async t=>{
+  const env=await setup(t,[
+    {slug:'model-fast',visibility:'list',display_name:'Fast model'},
+    {slug:'model-deep',visibility:'list',display_name:'Deep model'}
+  ]),{get}=env;
+  env.reply=()=>new Response(JSON.stringify({model:'model-deep',output_text:JSON.stringify({message:'No changes.',operations:[]})}));
+  assert.deepEqual(get('model-select').children.map(option=>[option.value,option.textContent]),[
+    ['model-fast','Fast model'],['model-deep','Deep model']
+  ]);
+  assert.equal(get('model-select').value,'model-fast');
+  assert.equal(get('reasoning-effort').value,'medium');
+  get('prompt').value='Describe the scene';env.submit();await env.idle();
+  assert.equal(env.requests.at(-1).model,'model-fast');
+  assert.deepEqual(env.requests.at(-1).reasoning,{effort:'medium'});
+  await new Promise(resolve=>setTimeout(resolve,10));
+  assert.equal(get('model-select').value,'model-fast');
+  get('model-select').value='model-deep';get('model-select').dispatchEvent(new Event('change'));
+  get('reasoning-effort').value='xhigh';
+  get('prompt').value='Refine the description';env.submit();await env.idle();
+  assert.equal(env.requests.at(-1).model,'model-deep');
+  assert.deepEqual(env.requests.at(-1).reasoning,{effort:'xhigh'});
 });
 
 test('Export OBJ scarica la geometria corrente in millimetri',async t=>{

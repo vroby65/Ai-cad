@@ -94,12 +94,13 @@ function historyText(content) {
   if(!summary || typeof summary.message!=='string' || typeof summary.applied!=='boolean' || !Array.isArray(summary.objectIds) || summary.objectIds.some(id=>typeof id!=='string')) return content;
   return `Previous response: ${summary.message}\nPrevious outcome: ${summary.applied ? 'request completed' : 'error, no changes'}\nInvolved IDs: ${summary.objectIds.join(', ')||'none'}`;
 }
-export async function interpretAI(prompt,state,selectedId,{key,url,model,onOutput,onDiagnostic,messages=[]}) {
+export async function interpretAI(prompt,state,selectedId,{key,url,model,effort='medium',onOutput,onDiagnostic,messages=[]}) {
   validateProject(state);
   if(typeof prompt!=='string' || !prompt.trim() || Array.from(prompt).length>2000) throw new Error('The command must contain 1–2000 characters.');
   if(selectedId!==null && !state.objects.some(o=>o.id===selectedId)) throw new Error('Selection does not exist.');
   if(typeof key!=='string' || !key.trim()) throw new Error('Enter the gateway API key at the top.');
   if(/[\r\n]/.test(key)) throw new Error('Invalid API key.');
+  if(!['low','medium','high','xhigh','max'].includes(effort)) throw new Error('Invalid reasoning effort.');
   const project={...state,objects:state.objects.map(o=>{
     if(o.type!=='mesh') return o;
     const {vertices,...compact}=o; return {...compact,triangleCount:vertices.length/9};
@@ -107,7 +108,7 @@ export async function interpretAI(prompt,state,selectedId,{key,url,model,onOutpu
   const base=gatewayURL(url);
   const input=[...conversationMessages(messages),{role:'user',content:JSON.stringify({command:prompt,selectedId,project})}];
   if(!model) model=(await getModels(base,key))[0].id;
-  const payload={model,instructions:contract,input,store:false,stream:false};
+  const payload={model,instructions:contract,input,reasoning:{effort},store:false,stream:false};
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),270000);
   const started=performance.now();let phase='network';
   const report=(stage,data)=>onDiagnostic?.(stage,{elapsedMs:Math.round(performance.now()-started),...data});

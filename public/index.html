@@ -16,6 +16,8 @@
     <section class="credentials" aria-label="AI gateway settings">
       <div class="url-field"><label for="gateway-url" class="sr-only">Gateway URL:port</label><input id="gateway-url" type="text" autocomplete="off" spellcheck="false" autocapitalize="off" maxlength="2048" placeholder="Gateway URL:port" aria-describedby="gateway-note"></div>
       <div class="key-field"><label for="api-key" class="sr-only">Gateway API key</label><div class="key-input"><input id="api-key" type="password" autocomplete="off" spellcheck="false" autocapitalize="off" placeholder="Gateway API key" aria-describedby="key-note"><button id="clear-key" type="button" title="Clear the saved API key">Clear</button></div></div>
+      <div class="model-field"><label for="model-select" class="sr-only">AI model</label><select id="model-select" title="AI model" disabled><option value="">Model</option></select></div>
+      <div class="effort-field"><label for="reasoning-effort" class="sr-only">Reasoning effort</label><select id="reasoning-effort" title="Reasoning effort"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="xhigh">XHigh</option><option value="max">Max</option></select></div>
       <output id="gateway-status" aria-live="polite">Gateway: not connected</output>
       <p id="gateway-note" class="sr-only">Enter your gateway address. Allow local network access if your browser asks.</p>
       <p id="key-note" class="sr-only">Key saved in this browser · use Clear to forget it.</p>
