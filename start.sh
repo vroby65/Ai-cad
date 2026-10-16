@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 set -e
 
-cd -- "$(dirname -- "$0")"
-exec npm start
+exec xdg-open http://127.0.0.1/ai-cad/
