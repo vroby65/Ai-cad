@@ -102,6 +102,17 @@ responses; never pretend missing operations were applied. Keep clarification-onl
 without rejected raw output or unexecuted operations. Pending turns are excluded.
 Current state/selection override historical references after manual edits/undo.
 Never persist chat to localStorage or project files; reset when opening JSON/examples.
+Glass objects may store fit:{targetIds,maxGap}; validate explicit existing solid
+targets, prune the relation when its last target is deleted and keep the local
+report advisory. Penetration uses bounded CSG analysis; high-complexity pairs must
+report uncertain rather than block rendering. Visual review is user-triggered and
+single-pass: capture one three-view JPEG, send it as input_image with compact state
+and fit results, then validate/apply the returned batch normally. Never store image
+data in chat, diagnostics, projects or local logs, and never start an automatic loop.
+The prompt may attach one JPG/PNG/WebP reference for its next command. Convert it
+locally to a bounded JPEG, show a removable preview, clear it only after success and
+retain it after failure for retry. Never persist the attachment or put its bytes in
+diagnostics/conversation memory. Keep this separate from Visual review.
 
 Selected-object fields edit name/color, center XYZ, relative world rotation and type-specific
 dimensions, including imported/cut meshes and editable holes. Keep IDs/type/groups/

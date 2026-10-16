@@ -56,6 +56,16 @@ function volume(geometry) {
   }
   return Math.abs(total);
 }
+export function intersectionVolume(first,second) {
+  const result=toCSG(first).intersect(toCSG(second));
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();let total=0;
+  for(const polygon of result.polygons) for(let i=2;i<polygon.vertices.length;i++) {
+    const points=[polygon.vertices[0],polygon.vertices[i-1],polygon.vertices[i]].map(vertex=>vertex.pos);
+    a.set(points[0].x,points[0].y,points[0].z);b.set(points[1].x,points[1].y,points[1].z);c.set(points[2].x,points[2].y,points[2].z);
+    total+=a.dot(b.cross(c))/6;
+  }
+  return Math.abs(total);
+}
 function subtractGeometry(object,holes,requireCut=false) {
   const base=geometryFor(object);
   if(!holes.length) return base;

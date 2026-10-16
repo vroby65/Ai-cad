@@ -13,11 +13,16 @@
   low/medium/high/xhigh/max on the next request without reloading the app.
 - Editable cut results allow up to 50000 triangles while deformation, imported STL
   and saved/baked mesh limits remain at 20000 triangles.
-- `npm test`: 146 passed. JavaScript syntax checks and `git diff --check` passed.
+- Added explicit glass/body fit relations, local penetration/clearance reports and
+  a user-triggered, one-pass three-view visual review using Responses image input.
+- Added one-shot user reference images with local JPG/PNG/WebP validation, bounded
+  JPEG conversion, removable preview and retry retention after failed requests.
+- `npm test`: 156 passed. JavaScript syntax checks and `git diff --check` passed.
 - DOM tests cover URL retargeting, Clear, Enter/IME behavior, chat, errors and
   geometry; transport tests use fake credentials and mock model responses.
-- Pi gateway tests: five passed, including restricted browser origins and
-  preflight, plus a bounded 512 KiB request budget for CAD conversation context. Live LAN preflight for the Pages origin returned 204; an untrusted
+- Local gateway tests: ten passed, including restricted browser origins and
+  preflight, plus a bounded 4 MiB request budget for Base64 image input. The gateway
+  change is not yet deployed to the Pi. Earlier live LAN preflight for the Pages origin returned 204; an untrusted
   origin returned 403. No router, Tor, SSH or firewall settings were changed.
 - Browser runtime reported no connected browsers, so visual/WebGL and actual
   browser local-network permission checks remain unverified.
@@ -31,7 +36,7 @@ no PHP. Tests do not use real keys or paid API requests.
 
 ## Automated suite
 
-**146 tests passed** with npm test. The suite covers:
+**156 tests passed** with npm test. The suite covers:
 
 - Primitive creation, names/colors, movement, Euler rotation, dimensions, copies,
   grouping, overlapping target deduplication, ungroup and deletion.
@@ -63,6 +68,14 @@ no PHP. Tests do not use real keys or paid API requests.
   retain the original scene, and new explanations do not show object placeholders.
 - Exact schemas, bounded objects/operations, finite numbers, stable IDs, invalid
   references, arbitrary-code fields, prototype pollution and atomic batches.
+- Glass-fit metadata validation and pruning, CSG penetration volume, accepted and
+  excessive clearance, high-complexity safeguards, and all three starter-car windows.
+- Multimodal review payloads contain input_text plus a Base64 input_image and the
+  fit report, while diagnostics omit image bytes. Simulated app controls verify one
+  explicit review request without an automatic loop.
+- User reference-image tests cover type/size checks, 1600 px resizing, JPEG output,
+  preview/removal, one-request payloads, clearing after success and retention after
+  provider rejection. Diagnostics receive only a referenceImage boolean.
 - Forty independent undo/redo snapshots, branch replacement and reset.
 - JSON save/open, size limits, mesh persistence and starter projects.
 - STL ASCII/binary validation, truncated files, nonfinite coordinates, planar

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from '../vendor/OrbitControls.js';
 import { geometryFor } from './geometry.js';
 import { evaluatedGeometry, geometrySignature } from './boolean.js';
+import { analyzeFits } from './fit-analysis.js';
 export { geometryFor } from './geometry.js';
 
 export function makeMesh(object,geometry=geometryFor(object)) {
@@ -64,6 +65,7 @@ export class CadView {
     this.camera.aspect=width/height; this.camera.updateProjectionMatrix(); this.renderer.setSize(width,height);
   }
   prepare(project) { return prepareChanges(project,this.meshes); }
+  analyzeFits(project) { return analyzeFits(project); }
   sync(project,prepared=prepareChanges(project,this.meshes)) {
     const present=new Set(project.objects.map(o=>o.id));
     for(const [id,mesh] of this.meshes) if(!present.has(id)) { this.model.remove(mesh); disposeMesh(mesh); this.meshes.delete(id); }
@@ -94,5 +96,35 @@ export class CadView {
     const distance=Math.max(100,size/(2*Math.tan(THREE.MathUtils.degToRad(narrowFov/2)))*1.25);
     this.controls.target.copy(center); this.camera.position.copy(center).add(new THREE.Vector3(1,-1.35,.95).normalize().multiplyScalar(distance));
     this.controls.update();
+  }
+  captureReviewImage() {
+    const box=new THREE.Box3();
+    for(const mesh of this.meshes.values()) if(mesh.visible && mesh.geometry.getAttribute('position').count) box.expandByObject(mesh);
+    if(box.isEmpty()) throw new Error('Add at least one visible object before visual review.');
+    const canvas=document.createElement('canvas'),context=canvas.getContext('2d');
+    if(!context) throw new Error('Scene capture is unavailable in this browser.');
+    const tile=300,labels=['Perspective','Side','Front'];
+    canvas.width=tile*3;canvas.height=tile;
+    const center=box.getCenter(new THREE.Vector3()),radius=Math.max(1,box.getSize(new THREE.Vector3()).length()/2);
+    const distance=Math.max(100,radius/Math.tan(THREE.MathUtils.degToRad(this.camera.fov/2))*1.35);
+    const directions=[new THREE.Vector3(1,-1.35,.95),new THREE.Vector3(0,-1,0),new THREE.Vector3(1,0,0)];
+    const size=this.renderer.getSize(new THREE.Vector2()),pixelRatio=this.renderer.getPixelRatio();
+    const position=this.camera.position.clone(),target=this.controls.target.clone(),aspect=this.camera.aspect,selection=this.selection.visible;
+    try {
+      this.selection.visible=false;this.renderer.setPixelRatio(1);this.renderer.setSize(tile,tile,false);
+      this.camera.aspect=1;this.camera.updateProjectionMatrix();
+      for(const [index,direction] of directions.entries()) {
+        this.controls.target.copy(center);this.camera.position.copy(center).add(direction.normalize().multiplyScalar(distance));
+        this.controls.update();this.renderer.render(this.scene,this.camera);
+        context.drawImage(this.renderer.domElement,index*tile,0,tile,tile);
+        context.fillStyle='#101826cc';context.fillRect(index*tile+10,10,88,24);
+        context.fillStyle='#d9e4f2';context.font='12px sans-serif';context.fillText(labels[index],index*tile+18,27);
+      }
+      return canvas.toDataURL('image/jpeg',.78);
+    } finally {
+      this.renderer.setPixelRatio(pixelRatio);this.renderer.setSize(size.x,size.y,false);
+      this.camera.aspect=aspect;this.camera.updateProjectionMatrix();this.controls.target.copy(target);this.camera.position.copy(position);
+      this.controls.update();this.selection.visible=selection;this.renderer.render(this.scene,this.camera);
+    }
   }
 }

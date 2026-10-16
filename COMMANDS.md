@@ -38,6 +38,19 @@ existing full-object IDs, not groups. It is stored by subtract and cannot be sup
 in AI create/update. An empty list means no targets, with no group fallback.
 Objects and groups are arrays; every group is {id,name} with at least one member.
 
+Any solid object may optionally carry a glass-fit relation:
+
+~~~json
+"fit": {"targetIds":["car-body"],"maxGap":2}
+~~~
+
+The object carrying fit is treated as glass. targetIds contains 1–200 distinct
+existing non-hole object IDs and cannot include the glass itself. maxGap is
+0–1000 mm. Create targets before the glass. Deleting all targets removes the fit
+relation; update may replace it or use fit:null to remove it. AIcad reports
+penetration, acceptable clearance, excessive distance or an uncertain high-complexity
+pair without rejecting the project.
+
 Object/group IDs are unique across the project: 1–64 characters, first ASCII
 letter, then ASCII letters/digits/_/-. Object/group names are nonblank, 1–80
 characters; project names 1–100; no control characters.
@@ -151,7 +164,7 @@ The object in create must follow the primitive schema.
 
 ~~~text
 {op:"create", object}
-{op:"update", id, changes:{name?,color?,position?,rotation?,dimensions?,hole?,profile?,modifiers?}}
+{op:"update", id, changes:{name?,color?,position?,rotation?,dimensions?,hole?,profile?,modifiers?,fit?}}
 {op:"deform", id, modifiers:[...]}
 {op:"resize", id, dimensions}
 {op:"translate", ids, delta:[x,y,z]}
@@ -294,6 +307,12 @@ Commands contain 1–2000 characters. Mesh vertices are omitted and triangleCoun
 Internal `{message,applied,objectIds}` memory is converted to labeled plain text;
 it never becomes a response template. Current state and selection are authoritative.
 At most 40 whole pairs within 128 KiB UTF-8 are sent, without persisting chat.
+
+Visual review replaces the final string content with a content array containing one
+input_text context and one Base64 JPEG input_image at high detail. The text also
+contains the local fitAnalysis report. The app sends at most three validated image
+data URLs totaling 3 MiB, currently one three-view composite. Images are sent only
+after the user presses Visual review and are omitted from chat memory and diagnostics.
 
 The Pi gateway sets upstream store:false and stream:true and returns
 `{model,output_text}` only after completed inference. output_text must contain

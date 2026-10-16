@@ -15,8 +15,10 @@ static hosting. The archived PHP backend is not called or deployed.
 | js/diagnostics.js | Bounded, redacted session events and downloadable diagnostics |
 | js/properties.js | Selected-object form, typed changes and inline errors |
 | js/layout.js | Chat separator, pointer capture, keyboard and adaptive bounds |
+| js/image-attachment.js | Local reference-image validation, resizing and JPEG conversion |
 | js/renderer.js | Three.js scene, Z-up camera, selection and stable-ID meshes |
 | js/geometry.js | Base shapes and shared evaluated geometry builder |
+| js/fit-analysis.js | Explicit glass/body overlap and clearance checks |
 | js/profiles.js, js/deform.js | Validated profiles, sampling and ordered transformations |
 | js/boolean.js | Local CSG subtraction, baked meshes and cache signatures |
 | js/state.js | Forty independent undo/redo snapshots |
@@ -41,6 +43,22 @@ response.completed before returning compact JSON. Browser replies are synchronou
 Mesh vertices are omitted and triangleCount added. The key occurs only in the
 Authorization header, never in the prompt, snapshots or exported files.
 
+Visual review is an explicit one-shot path. renderer.js renders perspective, side
+and front camera poses into one 900×300 JPEG. api.js places that data URL in a
+Responses input_image item beside an input_text item containing the compact scene
+and current fit report. The image is neither added to conversation memory nor
+diagnostics. The returned operations pass through the same validation, geometry
+preparation, atomic commit and undo history as a text command.
+
+A normal chat command may carry one user-selected JPG, PNG or WebP reference.
+image-attachment.js decodes it locally, limits the longest side to 1600 pixels,
+flattens transparency onto white and produces a JPEG no larger than 2 MiB. app.js
+keeps only the in-memory data URL and filename for its removable preview; api.js
+adds the data URL as input_image beside the current input_text. A successful command
+clears it, while a failed command retains it for retry. Image bytes never enter
+conversation memory, project state, localStorage or diagnostics. Visual review and
+user attachment remain separate UI actions and are not combined automatically.
+
 The response is untrusted. parseEnvelope accepts the gateway output_text (or a complete compatibility envelope), JSON
 with exact message/operations fields, a bounded explanation and allowed operations.
 applyOperations works on a copy and validates schemas, references and resource bounds
@@ -52,6 +70,14 @@ the reported bus response without reordering operations, creating groups early o
 weakening stored-project validation. Undeclared references still reject the batch.
 Each subtract independently checks its actual target/tool pair count before CSG.
 Errors reject the whole batch. Only a prepared, valid result is committed.
+
+Optional object fit metadata names explicit solid target IDs and a maximum gap.
+fit-analysis.js builds evaluated world-space geometry for only those pairs. A
+positive CSG intersection volume reports penetration. Disjoint world bounds provide
+a conservative clearance directly; touching/overlapping bounds without solid
+overlap use bounded surface sampling. Pairs above 10000 combined triangles report
+uncertain instead of running an unbounded exact CSG check. Reports are advisory and
+do not reject or rewrite a valid batch.
 
 message.content is exposed to the chat before schema validation, so malformed or
 truncated output stays readable. textContent renders all untrusted data.

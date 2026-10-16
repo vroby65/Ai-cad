@@ -97,9 +97,35 @@ line break. Examples:
 - `Create a curved handle by bending a 10×15×120 mm bar 180 degrees along Z.`
 - `Create a turned bottle with rounded shoulders and a narrow neck, then hollow it.`
 
+Use the image button beside the prompt to attach one JPG, PNG or WebP reference to
+the next message. AIcad converts it locally to a bounded JPEG (maximum 1600 px on
+the longest side), shows a removable preview and sends it only with that command.
+The attachment is removed after a successful response and retained after an error
+so the command can be retried. It is never stored in the project, chat history,
+localStorage or diagnostics. Image understanding depends on the selected model;
+AIcad reports a rejected image request without changing the scene.
+
 Left-drag rotates, the wheel zooms and right-drag pans. Click a solid or use the
 collapsible **Objects** panel to select it. **Fit view** fits visible material.
 The scene includes a grid and XYZ axes. One unit is one millimeter; Z is vertical.
+
+## Glass fit and visual review
+
+A glass object can carry an explicit fit relation to one or more body parts plus
+an allowed gap in millimeters. AIcad evaluates these pairs locally after every
+scene change and reports **penetrating**, **within tolerance**, **too far**, or
+**uncertain** in the Objects sidebar. Penetration uses CSG overlap volume; separated
+parts use their world-space bounds, with sampled surface distance for touching
+bounds. Exact overlap analysis is limited to 10000 combined triangles per pair.
+This is a mesh-based educational check, not a manufacturing-tolerance guarantee.
+
+**Visual review** captures one JPEG containing perspective, side and front views,
+sends it with the compact project and fit report to the currently selected model,
+and applies at most that single returned correction batch. The correction is a
+normal undoable edit. The button is available only for a nonempty scene and a
+connected model; it never starts an automatic review loop. Scene images are sent
+to the configured gateway only when the button is pressed, count as model input,
+and are not retained in diagnostics, chat history or project files.
 
 Shapes: boxes/cubes, spheres, cylinders, cones, tori, profile extrusions and solids
 of revolution. Commands can change position,
@@ -276,7 +302,7 @@ network failures.
 
 Logs stay in memory in the current tab unless the optional local collector is running.
 Download them before reloading when it is unavailable. They include project names, commands and model output;
-API keys, Authorization headers, source mesh vertices and reasoning content are
+API keys, Authorization headers, source mesh vertices, visual-review images and reasoning content are
 excluded/redacted. The buffer retains at most 100 events within 256 KiB of compact
 JSON; oversized records are marked as truncated previews. Log files do not belong
 in the public repository. Failed commands leave the editable project unchanged.
@@ -309,7 +335,8 @@ node --import ./tests/register-three.mjs --test tests/*.test.mjs
 
 The suite uses real Three.js geometries, STL loading/export, OBJ export and CSG. It checks
 JSON validation, IDs, atomic operations, meshes, removed volume, raycast through
-holes, round trips, undo/redo, chat, key/URL storage, gateway connection, resize events and HTTP.
+holes, glass-fit classification, multimodal review payloads, round trips, undo/redo,
+chat, key/URL storage, gateway connection, resize events and HTTP.
 Fetches and DOM/pointer interactions are simulated; no paid calls occur.
 See [verification details](docs/VERIFICATION.md).
 

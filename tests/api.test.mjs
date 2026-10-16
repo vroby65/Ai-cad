@@ -160,3 +160,22 @@ test('Il caso 2CV non espone al modello il JSON di memoria che veniva copiato co
   assert.match(payload.instructions,/JSON EXAMPLE/);
   assert.throws(()=>parseEnvelope(envelope({message:'Confermi?',applied:true,objectIds:[]}),emptyProject()),/operations.*applied.*objectIds/);
 });
+
+test('Visual review sends a base64 scene image and fit report without logging image data',async t=>{
+  let payload;const events=[];
+  t.mock.method(globalThis,'fetch',async(url,options)=>{
+    payload=JSON.parse(options.body);
+    return new Response(JSON.stringify(envelope({message:'The glass fit is correct.',operations:[]})));
+  });
+  const image='data:image/jpeg;base64,ZmFrZS1zY2VuZQ==';
+  const fitAnalysis=[{objectId:'glass',targetId:'body',status:'within-tolerance',clearance:1,tolerance:2}];
+  await interpretAI('Review the attached scene and correct visible fit problems.',emptyProject(),null,{
+    key:'test-key',url:'https://gateway.example',model:'test-model',images:[image],fitAnalysis,
+    onDiagnostic:(stage,data)=>events.push({stage,data})
+  });
+  const content=payload.input.at(-1).content;
+  assert.equal(content[0].type,'input_text');
+  assert.deepEqual(JSON.parse(content[0].text).fitAnalysis,fitAnalysis);
+  assert.deepEqual(content[1],{type:'input_image',image_url:image,detail:'high'});
+  assert.doesNotMatch(JSON.stringify(events),/ZmFrZS1zY2VuZQ/);
+});

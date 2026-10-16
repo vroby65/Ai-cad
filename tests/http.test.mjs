@@ -17,6 +17,9 @@ test('App e dipendenze funzionano con un server statico, senza PHP',async()=>{
   assert.equal(html.includes('Ctrl + Invio'),false);
   assert.match(html,/Enter to send · Shift \+ Enter: new line/);
   assert.match(html,/id="chat-messages" role="log"/);
+  assert.match(html,/id="attach-image"/);
+  assert.match(html,/id="image-file"[^>]*accept="image\/jpeg,image\/png,image\/webp"/);
+  assert.match(html,/id="image-attachment"[^>]*hidden/);
   assert.match(html,/id="object-hole" type="checkbox"/);
   assert.equal(html.includes('id="activity-list"'),false);
   assert.equal(html.includes('id="mode"'),false);

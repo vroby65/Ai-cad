@@ -12,6 +12,7 @@ COMPOUND ORIENTATION: For an upright profiled wall, create it with rotation [90,
 ASSEMBLIES: position always uses scene axes. Rotating geometry does not rotate its position or move other parts. Vehicles normally use X length, Y width/span, Z height. A plane's cylinder/lathe fuselage uses [0,90,0] along X; thin extruded wings lie in XY. Tail is behind along X; the vertical fin rises along Z. Calculate oriented bounds and connections, with wheels above the ground.
 Required primitive fields: {id,type,name,dimensions,position,rotation,color,groupId:null}.
 Optional primitive field hole: boolean; absent/false means solid, hole:true is an invisible editable cutting tool with real subtraction. Never fake holes using black shapes.
+GLASS FIT: a glass object may include fit:{targetIds:["body-id"],maxGap:2}. targetIds must name existing solid body parts and maxGap is the allowed clearance in mm (0–1000). Create body targets before the glass. Use this metadata for vehicle windows so AIcad can detect penetration or excessive separation. update may replace fit or use fit:null to remove it.
 REAL BOOLEAN SUBTRACTION is available: create cylinder, box, sphere, cone, torus or profiled tools with hole:true, then subtract. It removes material in both the 3D view and STL and keeps holes EDITABLE.
 subtract supports primitives and closed imported STL/JSON meshes. ids contains ONLY target solids; toolIds contains cutting tools. Groups do not constrain subtract. Wheels and objects absent from ids remain intact.
 Default subtraction preserves original solids and tools with their IDs, types, names, colors and groups. The engine stores targetIds on tools; never create/update targetIds directly.
@@ -29,7 +30,7 @@ twist rotates sections; bend curves in planes X→Y, Y→Z, Z→X. Tight foldove
 Use profiles, torus, twist/bend/taper for sophisticated shapes rather than unrelated cube stacks. Keep only necessary points/modifiers to fit triangle limits. Explain approximations; do not promise NURBS, CAD fillets or mechanical precision.
 Color #RRGGBB. Name 1–80 characters without controls. At most 200 objects and 200 flat groups.
 Operations (exact fields):
-{op:"create",object}; {op:"update",id,changes}: changes may contain name,color,position,rotation,dimensions,hole,profile,modifiers; no IDs/types/groups/vertices/targetIds.
+{op:"create",object}; {op:"update",id,changes}: changes may contain name,color,position,rotation,dimensions,hole,profile,modifiers,fit; no IDs/types/groups/vertices/targetIds.
 {op:"translate",ids,delta:[x,y,z]}: add scene-axis translation.
 {op:"rotate",ids,delta:[X,Y,Z]}: compose existing orientation around fixed world X, then Y, then Z (right-hand rule), never add Euler components. Preserve each object's center/pivot; do not rotate positions or introduce an assembly pivot.
 {op:"resize",id,dimensions}: replace dimensions, preserve center. {op:"deform",id,modifiers}: replace complete modifier list.
@@ -94,19 +95,23 @@ function historyText(content) {
   if(!summary || typeof summary.message!=='string' || typeof summary.applied!=='boolean' || !Array.isArray(summary.objectIds) || summary.objectIds.some(id=>typeof id!=='string')) return content;
   return `Previous response: ${summary.message}\nPrevious outcome: ${summary.applied ? 'request completed' : 'error, no changes'}\nInvolved IDs: ${summary.objectIds.join(', ')||'none'}`;
 }
-export async function interpretAI(prompt,state,selectedId,{key,url,model,effort='medium',onOutput,onDiagnostic,messages=[]}) {
+export async function interpretAI(prompt,state,selectedId,{key,url,model,effort='medium',onOutput,onDiagnostic,messages=[],images=[],fitAnalysis=[]}) {
   validateProject(state);
   if(typeof prompt!=='string' || !prompt.trim() || Array.from(prompt).length>2000) throw new Error('The command must contain 1–2000 characters.');
   if(selectedId!==null && !state.objects.some(o=>o.id===selectedId)) throw new Error('Selection does not exist.');
   if(typeof key!=='string' || !key.trim()) throw new Error('Enter the gateway API key at the top.');
   if(/[\r\n]/.test(key)) throw new Error('Invalid API key.');
   if(!['low','medium','high','xhigh','max'].includes(effort)) throw new Error('Invalid reasoning effort.');
+  if(!Array.isArray(images) || images.length>3 || images.some(image=>typeof image!=='string'||!/^data:image\/(?:jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(image)) || new TextEncoder().encode(JSON.stringify(images)).byteLength>3*1024*1024) throw new Error('Invalid or oversized image input.');
+  if(!Array.isArray(fitAnalysis) || new TextEncoder().encode(JSON.stringify(fitAnalysis)).byteLength>64*1024) throw new Error('Invalid fit analysis.');
   const project={...state,objects:state.objects.map(o=>{
     if(o.type!=='mesh') return o;
     const {vertices,...compact}=o; return {...compact,triangleCount:vertices.length/9};
   })};
   const base=gatewayURL(url);
-  const input=[...conversationMessages(messages),{role:'user',content:JSON.stringify({command:prompt,selectedId,project})}];
+  const context=JSON.stringify({command:prompt,selectedId,project,...(fitAnalysis.length?{fitAnalysis}:{})});
+  const content=images.length ? [{type:'input_text',text:context},...images.map(image_url=>({type:'input_image',image_url,detail:'high'}))] : context;
+  const input=[...conversationMessages(messages),{role:'user',content}];
   if(!model) model=(await getModels(base,key))[0].id;
   const payload={model,instructions:contract,input,reasoning:{effort},store:false,stream:false};
   const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),270000);
@@ -119,7 +124,7 @@ export async function interpretAI(prompt,state,selectedId,{key,url,model,effort=
     });
     phase='http';report('http',{status:response.status});
     if(!response.ok) {
-      const errors={400:'request parameters not accepted',401:'invalid API key',403:'access denied',402:'usage limit reached',502:'gateway unavailable or ChatGPT login required',413:'request too large; simplify the scene or start a new conversation',422:'invalid request parameters',429:'too many requests; wait and try again'};
+      const errors={400:images.length?'image request not accepted; the selected model may not support image input':'request parameters not accepted',401:'invalid API key',403:'access denied',402:'usage limit reached',502:'gateway unavailable or ChatGPT login required',413:'request too large; simplify the scene or start a new conversation',422:'invalid request parameters',429:'too many requests; wait and try again'};
       throw new Error(`AI gateway: ${errors[response.status]||'service unavailable'} (HTTP ${response.status}).`);
     }
     phase='body';

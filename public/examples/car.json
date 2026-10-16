@@ -67,7 +67,13 @@
         0
       ],
       "color": "#9bc9e8",
-      "groupId": null
+      "groupId": null,
+      "fit": {
+        "targetIds": [
+          "cabin"
+        ],
+        "maxGap": 2
+      }
     },
     {
       "id": "window-side-a",
@@ -89,7 +95,13 @@
         0
       ],
       "color": "#9bc9e8",
-      "groupId": null
+      "groupId": null,
+      "fit": {
+        "targetIds": [
+          "cabin"
+        ],
+        "maxGap": 2
+      }
     },
     {
       "id": "window-side-b",
@@ -111,7 +123,13 @@
         0
       ],
       "color": "#9bc9e8",
-      "groupId": null
+      "groupId": null,
+      "fit": {
+        "targetIds": [
+          "cabin"
+        ],
+        "maxGap": 2
+      }
     },
     {
       "id": "headlight-a",

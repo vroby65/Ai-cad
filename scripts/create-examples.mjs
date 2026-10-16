@@ -31,13 +31,13 @@ const robot=project('A small robot',[
 const carObjects=[
   box('chassis','Car body',[210,105,45],[0,0,50],'#edaa62'),
   box('cabin','Cabin',[100,90,45],[-10,0,95],'#edaa62'),
-  box('window-front','Windshield',[4,74,30],[42,0,99],'#9bc9e8'),
-  box('window-side-a','Left side window',[72,4,28],[-10,-47,99],'#9bc9e8'),
-  box('window-side-b','Right side window',[72,4,28],[-10,47,99],'#9bc9e8'),
+  {...box('window-front','Windshield',[4,74,30],[42,0,99],'#9bc9e8'),fit:{targetIds:['cabin'],maxGap:2}},
+  {...box('window-side-a','Left side window',[72,4,28],[-10,-47,99],'#9bc9e8'),fit:{targetIds:['cabin'],maxGap:2}},
+  {...box('window-side-b','Right side window',[72,4,28],[-10,47,99],'#9bc9e8'),fit:{targetIds:['cabin'],maxGap:2}},
   box('headlight-a','Left headlight',[4,22,14],[107,-30,54],'#f3edce'),
   box('headlight-b','Right headlight',[4,22,14],[107,30,54],'#f3edce'),
 ];
-for(const [i,p] of [[-70,-63,25],[-70,63,25],[70,-63,25],[70,63,25]].entries()) carObjects.push(cylinder('wheel-'+(i+1),(i<2?'Ruota posteriore ':'Ruota anteriore ')+(i%2+1),25,20,p,'#252d3e',[90,0,0],'wheels'));
+for(const [i,p] of [[-70,-63,25],[-70,63,25],[70,-63,25],[70,63,25]].entries()) carObjects.push(cylinder('wheel-'+(i+1),(i<2?'Rear wheel ':'Front wheel ')+(i%2+1),25,20,p,'#252d3e',[90,0,0],'wheels'));
 const car=project('A car',carObjects,[{id:'wheels',name:'Four wheels'}]);
 const advanced=project('Complex shapes',[
   {...shape('vase','lathe','Shaped vase',{radius:38,height:110},[-150,0,55],'#e9ad73'),profile:[[25,0],[32,15],[38,40],[31,75],[22,95],[25,110]]},

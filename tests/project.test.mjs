@@ -58,6 +58,21 @@ test('Tipi, schema, riferimenti, limiti e prototype pollution vengono rifiutati'
   assert.throws(()=>applyOperations(state,batch(Array(101).fill({op:'delete',ids:['cube-1']}))));
   assert.throws(()=>validateProject({...state,objects:Array.from({length:201},(_,i)=>({...cube,id:'id-'+i}))}));
 });
+
+test('Glass fit metadata keeps explicit body targets valid and prunes deleted targets',()=>{
+  const body={id:'body',type:'box',name:'Body',dimensions:{x:100,y:100,z:100},position:[0,0,0],rotation:[0,0,0],color:'#ff0000',groupId:null};
+  const glass={...body,id:'glass',name:'Glass',dimensions:{x:10,y:40,z:40},position:[56,0,0],fit:{targetIds:['body'],maxGap:2}};
+  const source={...emptyProject(),objects:[body,glass]};
+  assert.deepEqual(validateProject(source),source);
+  const cleared=applyOperations(source,{operations:[{op:'update',id:'glass',changes:{fit:null}}]});
+  assert.equal('fit' in cleared.objects[1],false);
+  const removed=applyOperations(source,{operations:[{op:'delete',ids:['body']}]});
+  assert.equal('fit' in removed.objects[0],false);
+  for(const fit of [null,{}, {targetIds:[],maxGap:2},{targetIds:['missing'],maxGap:2},{targetIds:['glass'],maxGap:2},{targetIds:['body','body'],maxGap:2},{targetIds:['body'],maxGap:-1}]) {
+    assert.throws(()=>validateProject({...source,objects:[body,{...glass,fit}]}));
+  }
+  assert.throws(()=>validateProject({...source,objects:[body,{...glass,hole:true}]}));
+});
 test('Tutti gli esempi si aprono e accettano operazioni validate senza backend',async()=>{
   for(const name of ['house','robot','car']) {
     const state=decodeProject(await readFile(new URL(`../public/examples/${name}.json`,import.meta.url),'utf8'));

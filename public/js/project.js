@@ -42,13 +42,21 @@ function meshVertices(o) {
   }
   if(min.filter((n,i)=>max[i]>n).length<2) throw new Error('The mesh must have a surface.');
 }
+function fit(value,ownerId) {
+  fields(value,['targetIds','maxGap']);
+  if(!Array.isArray(value.targetIds) || !value.targetIds.length || value.targetIds.length>MAX_OBJECTS || new Set(value.targetIds).size!==value.targetIds.length) throw new Error('Invalid glass fit targets.');
+  for(const target of value.targetIds) { id(target); if(target===ownerId) throw new Error('Glass fit cannot target itself.'); }
+  number(value.maxGap,0,1000);
+}
 function object(value) {
   const profiled=['extrude','lathe'].includes(value?.type);
-  fields(value,['id','type','name','dimensions','position','rotation','color','groupId',...(profiled?['profile']:[])],['modifiers',...(value?.type==='mesh'?['vertices']:['hole','targetIds'])]);
+  fields(value,['id','type','name','dimensions','position','rotation','color','groupId',...(profiled?['profile']:[])],['modifiers','fit',...(value?.type==='mesh'?['vertices']:['hole','targetIds'])]);
   if(profiled) validateProfile(value.profile,value.type);
   if(Object.hasOwn(value,'modifiers')) validateModifiers(value.modifiers);
   if(Object.hasOwn(value,'hole') && typeof value.hole!=='boolean') throw new Error('hole must be a boolean.');
+  if(value.fit && value.hole===true) throw new Error('A hole tool cannot be checked as glass.');
   id(value.id); text(value.name,80);
+  if(Object.hasOwn(value,'fit')) fit(value.fit,value.id);
   if(Object.hasOwn(value,'targetIds')) {
     if(!Array.isArray(value.targetIds) || value.targetIds.length>MAX_OBJECTS || new Set(value.targetIds).size!==value.targetIds.length) throw new Error('Invalid hole targets.');
     for(const target of value.targetIds) { id(target); if(target===value.id) throw new Error('A hole cannot cut itself.'); }
@@ -76,6 +84,9 @@ function validateState(state) {
   for(const group of groups) if(!state.objects.some(o=>o.groupId===group)) throw new Error('Empty group.');
   for(const o of state.objects) for(const target of o.targetIds||[]) {
     if(!state.objects.some(full=>full.id===target && !full.hole)) throw new Error('A hole target must be an existing solid.');
+  }
+  for(const o of state.objects) for(const target of o.fit?.targetIds||[]) {
+    if(!state.objects.some(full=>full.id===target && !full.hole)) throw new Error('A glass fit target must be an existing solid.');
   }
   const holes=state.objects.filter(o=>o.hole===true);
   if(holes.length>MAX_HOLES) throw new Error('Maximum 8 hole tools per project.');
@@ -115,6 +126,10 @@ function prune(state) {
   state.groups=state.groups.filter(g=>state.objects.some(o=>o.groupId===g.id));
   const fullIds=new Set(state.objects.filter(o=>!o.hole).map(o=>o.id));
   for(const object of state.objects) if(object.targetIds) object.targetIds=object.targetIds.filter(id=>fullIds.has(id));
+  for(const object of state.objects) if(object.fit) {
+    object.fit.targetIds=object.fit.targetIds.filter(id=>fullIds.has(id));
+    if(!object.fit.targetIds.length) delete object.fit;
+  }
 }
 export function rotateAngles(rotation,delta) {
   vector(rotation,36000);vector(delta,36000);
@@ -152,9 +167,14 @@ export function applyOperations(state,batch) {
         next.objects.push(created); break;
       }
       case 'update':
-        fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole','profile','modifiers']);
+        fields(op,['op','id','changes']); fields(op.changes,[],['name','color','position','rotation','dimensions','hole','profile','modifiers','fit']);
         if(!Object.keys(op.changes).length) throw new Error('Empty changes.');
-        Object.assign(find(next,op.id),structuredClone(op.changes)); break;
+        {
+          const changed=find(next,op.id),changes=structuredClone(op.changes);
+          if(changes.fit===null) { delete changed.fit; delete changes.fit; }
+          Object.assign(changed,changes);
+        }
+        break;
       case 'deform': {
         fields(op,['op','id','modifiers']);validateModifiers(op.modifiers);
         const object=find(next,op.id);object.modifiers=structuredClone(op.modifiers);

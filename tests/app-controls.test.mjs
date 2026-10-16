@@ -24,7 +24,7 @@ async function setup(t,models=[{slug:'test-model',visibility:'list'}]){
   const env={get,storage,requests,gatewayRequests:[],confirmations:0,accept:true,hold:false,reply:response};let release;
   const window=new EventTarget();
   t.after(async()=>{if(release){release();await env.idle();}window.dispatchEvent(new Event('pagehide'));});
-  const globals={document:{getElementById:get,createElement:()=>new Element(),querySelectorAll:()=>[]},window,ResizeObserver:class{observe(){}},matchMedia:()=>({matches:false}),localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},confirm:()=>{env.confirmations++;return env.accept;}};
+  const globals={document:{getElementById:get,createElement:tag=>{const element=new Element();if(tag==='canvas'){element.getContext=()=>({fillRect(){},drawImage(){}});element.toDataURL=()=> 'data:image/jpeg;base64,ZmFrZS1yZWZlcmVuY2U=';}return element;},querySelectorAll:()=>[]},window,ResizeObserver:class{observe(){}},matchMedia:()=>({matches:false}),localStorage:{getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},confirm:()=>{env.confirmations++;return env.accept;},createImageBitmap:async()=>({width:2000,height:1000,close(){}})};
   for(const [key,value] of Object.entries(globals)){
     const existed=Object.hasOwn(globalThis,key),previous=globalThis[key];globalThis[key]=value;
     t.after(()=>{if(existed)globalThis[key]=previous;else delete globalThis[key];});
@@ -37,7 +37,7 @@ async function setup(t,models=[{slug:'test-model',visibility:'list'}]){
     return env.reply();
   });
   // Execute the actual app; only the WebGL view is replaced for headless testing.
-  const view='data:text/javascript;base64,'+Buffer.from('export class CadView { prepare(){} sync(){} select(){} frame(){} }').toString('base64');
+  const view='data:text/javascript;base64,'+Buffer.from("export class CadView { prepare(){} sync(){} select(){} frame(){} analyzeFits(){return []} async captureReviewImage(){return 'data:image/jpeg;base64,ZmFrZS1zY2VuZQ=='} }").toString('base64');
   let source=await readFile(new URL('../public/js/app.js',import.meta.url),'utf8');
   source=source.replace(/from '\.\/([^']+)'/g,(_,name)=>`from '${name==='renderer.js'?view:new URL('../public/js/'+name,import.meta.url).href}'`);
   await import('data:text/javascript;base64,'+Buffer.from(source+'\n// instance '+instance++).toString('base64'));
@@ -123,6 +123,55 @@ test('Model and reasoning selectors change the next request without reloading',a
   get('prompt').value='Refine the description';env.submit();await env.idle();
   assert.equal(env.requests.at(-1).model,'model-deep');
   assert.deepEqual(env.requests.at(-1).reasoning,{effort:'xhigh'});
+});
+
+test('Visual review captures the scene and applies one multimodal request',async t=>{
+  const env=await setup(t),{get}=env;
+  assert.equal(get('visual-review').disabled,true);
+  get('prompt').value='Create a cube';env.submit();await env.idle();
+  assert.equal(get('visual-review').disabled,false);
+  env.reply=()=>new Response(JSON.stringify({output_text:JSON.stringify({message:'The scene is aligned.',operations:[]})}));
+  get('visual-review').click();await env.idle();
+  const content=env.requests.at(-1).input.at(-1).content;
+  assert.equal(content[0].type,'input_text');
+  assert.match(JSON.parse(content[0].text).command,/Review the attached/);
+  assert.equal(content[1].type,'input_image');
+  assert.equal(get('object-count').textContent,'1');
+});
+
+test('A user reference image is previewed, sent once and removed only after success',async t=>{
+  const env=await setup(t),{get}=env;
+  const input=get('image-file');
+  input.files=[{name:'concept.png',type:'image/png',size:1024}];
+  input.dispatchEvent(new Event('change'));await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal(get('image-attachment').hidden,false);
+  assert.equal(get('image-name').textContent,'concept.png');
+  assert.match(get('image-preview').src,/^data:image\/jpeg;base64,/);
+
+  env.reply=()=>new Response(JSON.stringify({output_text:JSON.stringify({message:'Unable to apply this reference.',operations:[]})}),{status:400});
+  get('prompt').value='Use this concept as a reference';env.submit();await env.idle();
+  assert.equal(get('image-attachment').hidden,false);
+  assert.match(get('status').textContent,/selected model may not support image input/);
+  assert.doesNotMatch(get('diagnostic-output').textContent,/ZmFrZS1yZWZlcmVuY2U/);
+
+  env.reply=()=>new Response(JSON.stringify({output_text:JSON.stringify({message:'Reference understood.',operations:[]})}));
+  env.submit();await env.idle();
+  const content=env.requests.at(-1).input.at(-1).content;
+  assert.equal(content[0].type,'input_text');
+  assert.equal(content[1].type,'input_image');
+  assert.match(content[1].image_url,/^data:image\/jpeg;base64,/);
+  assert.equal(get('image-attachment').hidden,true);
+  assert.equal(get('image-preview').src,'');
+});
+
+test('A prepared reference image can be removed without sending it',async t=>{
+  const env=await setup(t),{get}=env;
+  get('image-file').files=[{name:'sketch.webp',type:'image/webp',size:2048}];
+  get('image-file').dispatchEvent(new Event('change'));await new Promise(resolve=>setTimeout(resolve,0));
+  get('remove-image').click();
+  assert.equal(get('image-attachment').hidden,true);
+  get('prompt').value='Create a cube';env.submit();await env.idle();
+  assert.equal(typeof env.requests.at(-1).input.at(-1).content,'string');
 });
 
 test('Export OBJ scarica la geometria corrente in millimetri',async t=>{
